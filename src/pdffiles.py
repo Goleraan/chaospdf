@@ -7,7 +7,7 @@ import logging
 class PDFFiles():
     filelist = []
     check_success = False
-    
+
     def __init__(self):
         self.log = logging.getLogger('file')  # Log to console and file
         self.logf = logging.getLogger('filef')  # Log to file only
