@@ -13,6 +13,7 @@ class Fitzdoc():
         self.log = logging.getLogger('doc')
         self.log.info('Initializing document for "%s"', file)
         self.file = file
+        self.page_text = []
         self.doc = fitz.open(self.file)
         self.encryption = self.check_encryption()
         if self.encryption:
@@ -47,16 +48,31 @@ class Fitzdoc():
             # Heading level, heading, page number, ...
             print(' '*(item[0]-1) + item[1])
 
-    def process_pages(self, doc:fitz.Document, page_offset:int):
+    def process_pages(self, page_offset:int):
+        self.page_text = []
         html = ''
-        for pn, page in enumerate(doc):
+        for pn, page in enumerate(self.doc):
             p = Fitzpage(page, pn+page_offset)
-            p.fix_xhtml_utf_characters()
-            p.fix_xhtml_line_breaks()
-            # page.remove_xhtml_repeating('Repeating text defined elsewhere')
-            p.fix_xhtml_page_number()
-            html += p.xhtml
+            content = self.extract_text_from_page(p)
+            self.page_text.append(content)
+            html += content
+        return html
+
+    def process_pages_separately(self, page_offset:int):
+        self.page_text = []
+        html = ''
+        for pn, page in enumerate(self.doc):
+            p = Fitzpage(page, pn+page_offset)
+            content = self.extract_text_from_page(p)
+            self.page_text.append(content)
+            html += f'\n\n====== Page {pn+page_offset:04d} ======\n\n'
+            html += content
         return html
 
     def extract_text_from_page(self, page:Fitzpage):
-        p = Fitzpage()
+        page.get_xhtml()
+        page.fix_xhtml_utf_characters()
+        page.fix_xhtml_line_breaks()
+        # page.remove_xhtml_repeating('Repeating text defined elsewhere')
+        page.remove_xhtml_page_number()
+        return page.xhtml
