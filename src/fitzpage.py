@@ -1,12 +1,10 @@
 """
  logging for logging and debugging
  re for regex replacements
- pathlib to write data to disc
  fitz from pymupdf to process PDF documents
 """
 import logging
 import re
-# from pathlib import Path
 import fitz
 
 class Fitzpage():
@@ -70,7 +68,8 @@ class Fitzpage():
 
     def get_block_text(self, sorting:bool):
         """
-        get_block_text Extracts text from a PDF file block by block or paragraph by paragraph
+        get_block_text Extracts text from a PDF file block by block or 
+        paragraph by paragraph
 
         :param sorting: True to attempt sorting the PDF elements from top to bottom
         :type sorting: bool
@@ -140,8 +139,10 @@ class Fitzpage():
 
     def fix_text_line_breaks(self):
         """
-        fix_text_line_breaks attempts to add paragraph line breaks by looking for missing spaces after a period followed by a captial letter.
-        It overwrites self.text with the corrected text but does not touch self.textblocks.
+        fix_text_line_breaks attempts to add paragraph line breaks by 
+        looking for missing spaces after a period followed by a captial letter.
+        It overwrites self.text with the corrected text but does not touch 
+        self.textblocks.
 
         :return: Corrected text
         :rtype: str
@@ -151,10 +152,14 @@ class Fitzpage():
             self.log.error('No plain text data available, aborting fix_text_line_breaks')
             return self.text
         # Idea:
-        #  - Find all appearances of strings like ".D", where a capital letter follows a period
+        #  - Find all appearances of strings like ".D", where a capital letter 
+        #    follows a period
         #  - Save these in a list
-        #  - In the original string, replace each of these with a line break between the period and the letter
-        # The implementation might run too many replace operations because of duplicate entries in the list. This should only increase the run time and not harm the text itself.
+        #  - In the original string, replace each of these with a line break 
+        #    between the period and the letter
+        # The implementation might run too many replace operations because of 
+        # duplicate entries in the list. This should only increase the run time 
+        # and not harm the text itself.
         breaks = re.findall(r'\.[A-ZÄÖÜ]', self.text)
         if len(breaks) > 0:
             for lb in breaks:
@@ -230,18 +235,24 @@ class Fitzpage():
         self.log.debug('Entering method "_check_text_data"')
         check_success = False
         if self.text == '':
-            self.log.warning('No text detected in plain text format, attempting to extract text as blocks')
+            self.log.warning('No text detected in plain text format, '+
+                             'attempting to extract text as blocks')
             self.get_block_text(False)
             check_success = True
             if self.text == '':
-                self.log.warning(f'Could not extract any text in block text format from page {self.pagenumber} with index {self.index}, attempting plain text detection')
+                self.log.warning('Could not extract any text in block '+
+                                 'text format from page % with index %s, '+
+                                 'attempting plain text detection',
+                                 self.pagenumber, self.index)
                 self.get_plain_text(False)
                 if self.text == '':
-                    self.log.error(f'Could not extract any text in plain text format from page {self.pagenumber} with index {self.index}')
+                    self.log.error('Could not extract any text in plain '+
+                                   'text format from page %s with index %s',
+                                   self.pagenumber, self.index)
                     check_success = False
         else:
             check_success = True
-        self.log.info(f'Result of _check_text_data: {check_success}')
+        self.log.info('Result of _check_text_data: %s', check_success)
         return check_success
 
     def get_html(self):
@@ -254,7 +265,9 @@ class Fitzpage():
         :rtype: str
         """
         self.log.debug('Entering method "get_html"')
-        self.html = self.page.get_text('html', flags=fitz.TEXT_PRESERVE_WHITESPACE+fitz.TEXT_DEHYPHENATE)
+        self.html = self.page.get_text('html',
+                                       flags=fitz.TEXT_PRESERVE_WHITESPACE+
+                                             fitz.TEXT_DEHYPHENATE)
         self.executed['get_html'] = True
         return self.html
 
@@ -279,7 +292,7 @@ class Fitzpage():
         get_xhtml extracts text from a PDF document in XHTML format.
         This format seems to be the most useful to get all the text with 
         formatting. Paragraphs within a text block are NOT detected and 
-        must be recovered later from self.text with ????????????????????????????????
+        must be recovered later from self.text with fix_xhtml_line_breaks().
 
         :return: Text with basic HTML formatting.
         :rtype: str
@@ -292,7 +305,10 @@ class Fitzpage():
                                         flags=fitz.TEXT_PRESERVE_LIGATURES+
                                               fitz.TEXT_PRESERVE_WHITESPACE+
                                               fitz.TEXT_DEHYPHENATE)
-        # self.xhtml_ligatures = self.page.get_text('xhtml', flags=fitz.TEXT_PRESERVE_LIGATURES+fitz.TEXT_PRESERVE_WHITESPACE+fitz.TEXT_DEHYPHENATE)
+        # self.xhtml_ligatures = self.page.get_text('xhtml',
+        #                                           flags=fitz.TEXT_PRESERVE_LIGATURES+
+        #                                                 fitz.TEXT_PRESERVE_WHITESPACE+
+        #                                                 fitz.TEXT_DEHYPHENATE)
         if self.xhtml == '':
             self.log.error('Could not detect any text in xhtml format '+
                            'on page %s with index %s',
@@ -396,29 +412,46 @@ class Fitzpage():
         self.executed['remove_xhtml_page_number'] = True
         return self.xhtml
 
-    def fix_xhtml_line_breaks(self):
+    def _xhtml_replacements(self):
         """
-        fix_xhtml_line_breaks adds additional paragraphs that PyMuPDF ignores during XHTML extraction.
-        The paragraphs exist for block text extractions. By comparing the output of both methods 
-        it is possible to get a clean output with multiple paragraphs.
-
-        :return: Cleaned up HTML code with multiple paragraphs
-        :rtype: str
+        _xhtml_replacements helper method for fix_xhtml_line_breaks()
+        It removes incorrect paragraphs due to multi-column layout.
+        It also removes unnecessary HTML tags.
         """
-        self.log.debug('Entering method "fix_xhtml_line_breaks"')
-        if not self._check_xhtml_data():
-            self.log.error('No xhtml data available, aborting fix_xhtml_line_breaks')
-            return self.xhtml
         self.xhtml = self.xhtml.replace(' </p>\n<p>', '')  # Fix multi-column-layout
-        # self.xhtml = self.xhtml.replace('</p><p>', '')
-        # self.xhtml = self.xhtml.replace('<b> </b>', '')
-        # self.xhtml = self.xhtml.replace('<i> </i>', '')
-        #
-        # Add additional line breaks due to paragraphs
-        # First, get the block text without sorting, like it's done for XHTML
-        # and apply the same text processing options
+        self.xhtml = self.xhtml.replace(' </p><p>', '')
+        self.xhtml = self.xhtml.replace('<b> </b>', '')  # Remove unnecessary tags
+        self.xhtml = self.xhtml.replace('<i> </i>', '')  # Remove unnecessary tags
+
+    def _xhtml_inline_headings(self):
+        """
+        _xhtml_inline_headings adds additional line breaks for in-line headings 
+        in text and HTML formats. Helper method for fix_xhtml_line_breaks().
+        """
+        splithtml = self.xhtml.split('\n')
+        inline_heading_count = self.xhtml.count('><p>')
+        # Fix in-line headings in text
+        if inline_heading_count > 0:
+            for html_paragraph in splithtml:
+                if html_paragraph.startswith('<h') and html_paragraph.endswith('</p>'):
+                    endpos = html_paragraph.find('</')
+                    sub = html_paragraph[:endpos]
+                    startpos = sub.rfind('>')
+                    sub = sub[startpos+1:]
+                    pos = self.text.find(sub)
+                    self.text = self.text[:pos+len(sub)]+'\n'+self.text[pos+len(sub):]
+            self.xhtml = self.xhtml.replace('><p>', '>\n<p>')  # Fix in-line headings in HTML
+
+    def _xhtml_line_breaks_text_processing(self):
+        """
+        _xhtml_line_breaks_text_processing applies the same text processing operations 
+        to a block text detection as they are applied to the xhtml steps. This is 
+        needed as first step of three to add the paragraphs within a text block that 
+        the xhtml extraction cannot recover by itself.
+        """
         self.get_block_text(False)
-        if self.executed['fix_xhtml_utf_characters'] or self.executed['fix_xhtml_ligature_spaces']:
+        if (self.executed['fix_xhtml_utf_characters'] or 
+            self.executed['fix_xhtml_ligature_spaces']):
             self.fix_text_ligature_spaces()
         self.fix_text_line_breaks()
         if self.executed['remove_xhtml_page_number']:
@@ -426,23 +459,33 @@ class Fitzpage():
         if self.executed['remove_xhtml_repeating']:
             for text in self.executed['repeating_xhtml']:
                 self.remove_text_repeating(text)
-        # Second, find the line breaks and split the HTML
+
+    def _xhtml_line_breaks_recover_breaks(self):
+        """
+        _xhtml_line_breaks_recover_breaks recovers the paragraph line breaks by 
+        splitting text and html by line breaks. It looks for the list items that 
+        start and end with paragraph tags in the html code and counts the period 
+        characters in both, text and html. If there is a mismatch, it recovers the 
+        missing paragraph + line break in the html-derived list.
+        In the end, both lists should have the same length.
+
+        :return: The list for the html code with one heading or paragraph for each 
+        list item
+        :rtype: list
+        """
+        self._xhtml_inline_headings()  # In-line headings must be fixed, first
         splittext = self.text.split('\n')
         splithtml = self.xhtml.split('\n')
-        # Only for testing:
-        # print(f'textlength {len(splittext)} - htmllength {len(splithtml)}')
-        for i in range(0,len(splittext)):
-            if i > len(splithtml):
+        for i, text_paragraph in enumerate(splittext):
+            if i >= len(splithtml):
                 self.log.error('Mismatch in text and HTML number of paragraphs in '+
                                'fix_xhtml_line_breaks for line %s', i)
                 break
-            if not splithtml[i].startswith('<p>'):
-                continue
-            if splithtml[i].endswith('</p>'):
+            if splithtml[i].startswith('<p>') and splithtml[i].endswith('</p>'):
                 # Count the number of periods in both texts.
                 # Direct text length comparison does not work because there can be 
                 # offsets due to the text operations like ligature handling.
-                periodcounttext = splittext[i].count('.')
+                periodcounttext = text_paragraph.count('.')
                 periodcounthtml = splithtml[i].count('.')
                 periodpositions = []
                 # If the HTML code contains more periods, it's missing in-block paragraphs.
@@ -453,7 +496,14 @@ class Fitzpage():
                             periodpositions.append(pos)
                     splithtml.insert(i+1, '<p>'+splithtml[i][periodpositions[periodcounttext-1]+2:])
                     splithtml[i] = splithtml[i][:periodpositions[periodcounttext-1]+1]+'</p>'
-
+        if len(splittext) != len(splithtml):
+            self.log.error('After recovering the in-block paragraphs in '+
+                           '_xhtml_inline_headings() which is called from '+
+                           'fix_xhtml_line_breaks(), there is a mismatch in '+
+                           'the number of paragraphs but they should be the same!\n'+
+                           'Paragraphs in text format: %s\n'+
+                           'Paragraphs in HTML format: %s',
+                           len(splittext), len(splithtml))
         # Only for testing:
         # print(f'Final length text: {len(splittext)} - html: {len(splithtml)}')
         # for i in range(0,len(splittext)):
@@ -462,13 +512,48 @@ class Fitzpage():
         #     print('=== HTML ===')
         #     print(splithtml[i])
         #     print()
+        return splithtml
 
-        # Third, assemble the full HTML again
+    def _xhtml_line_breaks_assemble_html(self, splithtml:list):
+        """
+        _xhtml_line_breaks_assemble_html takes the output of 
+        _xhtml_line_beraks_recover_breaks() to re-assemble the HTML code 
+        as a single text string.
+
+        :param splithtml: List of HTML code lines as strings
+        :type splithtml: list
+        """
         self.xhtml = ''
         for line in splithtml:
             if line == '\n' or line == '\r\n' or line == '':
                 continue
             self.xhtml += line+'\n'
+        
+    def fix_xhtml_line_breaks(self):
+        """
+        fix_xhtml_line_breaks adds additional paragraphs that PyMuPDF ignores 
+        during XHTML extraction.
+        The paragraphs exist for block text extractions. By comparing the output 
+        of both methods it is possible to get a clean output with multiple 
+        paragraphs.
+
+        :return: Cleaned up HTML code with multiple paragraphs
+        :rtype: str
+        """
+        self.log.debug('Entering method "fix_xhtml_line_breaks"')
+        if not self._check_xhtml_data():
+            self.log.error('No xhtml data available, aborting fix_xhtml_line_breaks')
+            return self.xhtml
+        self._xhtml_replacements()  # Fixes for mlti-column layout and unnecessary tags
+        #
+        # Add additional line breaks due to paragraphs
+        # First, get the block text without sorting, like it's done for XHTML
+        # and apply the same text processing options
+        self._xhtml_line_breaks_text_processing()
+        # Second, find the line breaks and split the HTML
+        splithtml = self._xhtml_line_breaks_recover_breaks()
+        # Third, assemble the full HTML again
+        self._xhtml_line_breaks_assemble_html(splithtml)
 
         self.executed['fix_xhtml_line_breaks'] = True
         return self.xhtml
@@ -783,7 +868,8 @@ class Fitzpage():
         self.log.debug('Entering method "_check_xhtml_data"')
         check_success = False
         if self.xhtml == '':
-            self.log.warning('No text detected in xhtml format, attempting to extract text as xhtml')
+            self.log.warning('No text detected in xhtml format, '+
+                             'attempting to extract text as xhtml')
             self.get_xhtml()
             check_success = True
             if self.xhtml == '':
@@ -797,7 +883,8 @@ class Fitzpage():
         # of the method to continue or abort the fix_xhtml or replace_xhtml methods.
         # else:
         #     if len(self.textblocks) == 0:
-        #         self.log.warning('No text detected in plain text format, attempting to detect text blocks')
+        #         self.log.warning('No text detected in plain text format, '+
+        #                          'attempting to detect text blocks')
         #         self.get_block_text(False)
         #         check_success = True
         #         if self.text == '':
