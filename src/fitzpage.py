@@ -419,8 +419,8 @@ class Fitzpage():
         It removes incorrect paragraphs due to multi-column layout.
         It also removes unnecessary HTML tags.
         """
-        self.xhtml = self.xhtml.replace(' </p>\n<p>', '')  # Fix multi-column-layout
-        self.xhtml = self.xhtml.replace(' </p><p>', '')
+        self.xhtml = self.xhtml.replace(' </p>\n<p>', ' ')  # Fix multi-column-layout
+        self.xhtml = self.xhtml.replace(' </p><p>', ' ')
         self.xhtml = self.xhtml.replace('<b> </b>', '')  # Remove unnecessary tags
         self.xhtml = self.xhtml.replace('<i> </i>', '')  # Remove unnecessary tags
 
@@ -451,7 +451,7 @@ class Fitzpage():
         the xhtml extraction cannot recover by itself.
         """
         self.get_block_text(False)
-        if (self.executed['fix_xhtml_utf_characters'] or 
+        if (self.executed['fix_xhtml_utf_characters'] or
             self.executed['fix_xhtml_ligature_spaces']):
             self.fix_text_ligature_spaces()
         self.fix_text_line_breaks()
@@ -530,7 +530,7 @@ class Fitzpage():
             if line == '\n' or line == '\r\n' or line == '':
                 continue
             self.xhtml += line+'\n'
-        
+
     def fix_xhtml_line_breaks(self):
         """
         fix_xhtml_line_breaks adds additional paragraphs that PyMuPDF ignores 
@@ -551,16 +551,17 @@ class Fitzpage():
             self.log.error('No text data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
 
+        self._xhtml_line_breaks_text_processing()
+        splithtml = self._xhtml_line_breaks_recover_breaks()
+        self._xhtml_line_breaks_assemble_html(splithtml)
         self._xhtml_replacements()  # Fixes for mlti-column layout and unnecessary tags
         #
         # Add additional line breaks due to paragraphs
         # First, get the block text without sorting, like it's done for XHTML
         # and apply the same text processing options
-        self._xhtml_line_breaks_text_processing()
+        # self._xhtml_line_breaks_text_processing()
         # Second, find the line breaks and split the HTML
-        splithtml = self._xhtml_line_breaks_recover_breaks()
         # Third, assemble the full HTML again
-        self._xhtml_line_breaks_assemble_html(splithtml)
 
         self.executed['fix_xhtml_line_breaks'] = True
         return self.xhtml
