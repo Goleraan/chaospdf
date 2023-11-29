@@ -847,6 +847,7 @@ class Fitzpage():
         self.xhtml = self.xhtml.replace('&#x2663;', '♣')
         self.xhtml = self.xhtml.replace('&#x2665;', '♥')
         self.xhtml = self.xhtml.replace('&#x2666;', '♦')
+        self.xhtml = self.xhtml.replace('&#x2026;', '…')
         # Ligatures
         self.xhtml = self.xhtml.replace('&#xfb00; ', 'ff')
         self.xhtml = self.xhtml.replace('&#xfb01; ', 'fi')
