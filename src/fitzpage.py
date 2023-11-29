@@ -427,21 +427,32 @@ class Fitzpage():
     def _xhtml_inline_headings(self):
         """
         _xhtml_inline_headings adds additional line breaks for in-line headings 
-        in text and HTML formats. Helper method for fix_xhtml_line_breaks().
+        in HTML format. Helper method for fix_xhtml_line_breaks().
         """
-        splithtml = self.xhtml.split('\n')
-        inline_heading_count = self.xhtml.count('><p>')
-        # Fix in-line headings in text
-        if inline_heading_count > 0:
-            for html_paragraph in splithtml:
-                if html_paragraph.startswith('<h') and html_paragraph.endswith('</p>'):
-                    endpos = html_paragraph.find('</')
-                    sub = html_paragraph[:endpos]
-                    startpos = sub.rfind('>')
-                    sub = sub[startpos+1:]
-                    pos = self.text.find(sub)
-                    self.text = self.text[:pos+len(sub)]+'\n'+self.text[pos+len(sub):]
-            self.xhtml = self.xhtml.replace('><p>', '>\n<p>')  # Fix in-line headings in HTML
+        missing_line_breaks = [(hits.start(0), hits.end(0))
+                               for hits in re.finditer(r'</h[1-6]><p>', self.xhtml)]
+        out = ''
+        if len(missing_line_breaks) > 0:
+            start = 0
+            for first, last in missing_line_breaks:
+                out += self.xhtml[start:first+5]+'\n'
+                end = first+5
+            out += self.xhtml[end:]
+        if out != '':
+            self.xhtml = out
+        # splithtml = self.xhtml.split('\n')
+        # inline_heading_count = self.xhtml.count('><p>')
+        # # Fix in-line headings in text
+        # if inline_heading_count > 0:
+        #     for html_paragraph in splithtml:
+        #         if html_paragraph.startswith('<h') and html_paragraph.endswith('</p>'):
+        #             endpos = html_paragraph.find('</')
+        #             sub = html_paragraph[:endpos]
+        #             startpos = sub.rfind('>')
+        #             sub = sub[startpos+1:]
+        #             pos = self.text.find(sub)
+        #             self.text = self.text[:pos+len(sub)]+'\n'+self.text[pos+len(sub):]
+        #     self.xhtml = self.xhtml.replace('><p>', '>\n<p>')  # Fix in-line headings in HTML
 
     def _xhtml_line_breaks_text_processing(self):
         """
@@ -474,7 +485,6 @@ class Fitzpage():
         list item
         :rtype: list
         """
-        self._xhtml_inline_headings()  # In-line headings must be fixed, first
         splittext = self.text.split('\n')
         splithtml = self.xhtml.split('\n')
         for i, text_paragraph in enumerate(splittext):
@@ -482,21 +492,27 @@ class Fitzpage():
                 self.log.error('Mismatch in text and HTML number of paragraphs in '+
                                'fix_xhtml_line_breaks for line %s', i)
                 break
-            if splithtml[i].startswith('<p>') and splithtml[i].endswith('</p>'):
+            if splithtml[i].endswith('</p>'):
                 # Count the number of periods in both texts.
                 # Direct text length comparison does not work because there can be 
                 # offsets due to the text operations like ligature handling.
-                periodcounttext = text_paragraph.count('.')
-                periodcounthtml = splithtml[i].count('.')
-                periodpositions = []
+                period_count_text = text_paragraph.count('.')
+                period_count_html = splithtml[i].count('.')
+                period_positions = []
                 # If the HTML code contains more periods, it's missing in-block paragraphs.
                 # They can be recovered by the using the positions of the periods.
-                if periodcounttext < periodcounthtml:
+                if period_count_text < period_count_html:
                     for pos, char in enumerate(splithtml[i]):
                         if char == '.':
-                            periodpositions.append(pos)
-                    splithtml.insert(i+1, '<p>'+splithtml[i][periodpositions[periodcounttext-1]+2:])
-                    splithtml[i] = splithtml[i][:periodpositions[periodcounttext-1]+1]+'</p>'
+                            period_positions.append(pos)
+                    splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
+                    splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
+                elif splithtml[i].endswith(':</p>') and not text_paragraph.endswith(':'):
+                    for pos, char in enumerate(splithtml[i]):
+                        if char == '.':
+                            period_positions.append(pos)
+                    splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
+                    splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
         if len(splittext) != len(splithtml):
             self.log.error('After recovering the in-block paragraphs in '+
                            '_xhtml_inline_headings() which is called from '+
@@ -554,7 +570,8 @@ class Fitzpage():
         self._xhtml_line_breaks_text_processing()
         splithtml = self._xhtml_line_breaks_recover_breaks()
         self._xhtml_line_breaks_assemble_html(splithtml)
-        self._xhtml_replacements()  # Fixes for mlti-column layout and unnecessary tags
+        self._xhtml_inline_headings()
+        self._xhtml_replacements()  # Fixes for multi-column layout and unnecessary tags
         #
         # Add additional line breaks due to paragraphs
         # First, get the block text without sorting, like it's done for XHTML
