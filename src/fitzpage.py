@@ -105,6 +105,7 @@ class Fitzpage():
                 self.text = self.text[0:len(self.text)-2]
             else:
                 self.text += '\n'
+        self.text = self.text.replace('…', '...')
         self.executed['get_block_text'] = True
         return self.text
 
@@ -436,8 +437,8 @@ class Fitzpage():
             start = 0
             for first, last in missing_line_breaks:
                 out += self.xhtml[start:first+5]+'\n'
-                end = first+5
-            out += self.xhtml[end:]
+                start = first+5
+            out += self.xhtml[start:]
         if out != '':
             self.xhtml = out
         # splithtml = self.xhtml.split('\n')
@@ -485,6 +486,8 @@ class Fitzpage():
         list item
         :rtype: list
         """
+        self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
+        self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
         splittext = self.text.split('\n')
         splithtml = self.xhtml.split('\n')
         for i, text_paragraph in enumerate(splittext):
@@ -501,18 +504,37 @@ class Fitzpage():
                 period_positions = []
                 # If the HTML code contains more periods, it's missing in-block paragraphs.
                 # They can be recovered by the using the positions of the periods.
-                if period_count_text < period_count_html:
+                case1 = (period_count_text < period_count_html) and (
+                         period_count_text > 0)
+                case2 = splithtml[i].endswith(':</p>') and not (
+                        text_paragraph.endswith(':')) and (
+                        period_count_text > 0)
+                case3 = text_paragraph.endswith('.') and not (
+                        splithtml[i].endswith('.</p>') or (
+                            splithtml[i].endswith('.</i></p>')) or (
+                            splithtml[i].endswith('.</b></p>'))) and (
+                        period_count_text > 0)
+                if case1 or case2 or case3:
                     for pos, char in enumerate(splithtml[i]):
                         if char == '.':
                             period_positions.append(pos)
-                    splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
+                    if i+1 < len(splithtml):
+                        splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
+                    else:
+                        splithtml.append('<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
                     splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
-                elif splithtml[i].endswith(':</p>') and not text_paragraph.endswith(':'):
-                    for pos, char in enumerate(splithtml[i]):
-                        if char == '.':
-                            period_positions.append(pos)
-                    splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
-                    splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
+                # elif splithtml[i].endswith(':</p>') and not text_paragraph.endswith(':'):
+                #     for pos, char in enumerate(splithtml[i]):
+                #         if char == '.':
+                #             period_positions.append(pos)
+                #     splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
+                #     splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
+                # elif text_paragraph.endswith('.') and not (splithtml[i].endswith('.</p>') or splithtml[i].endswith('.</i></p>') or splithtml[i].endswith('.</b></p>')):
+                #     for pos, char in enumerate(splithtml[i]):
+                #         if char == '.':
+                #             period_positions.append(pos)
+                #     splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
+                #     splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
         if len(splittext) != len(splithtml):
             self.log.error('After recovering the in-block paragraphs in '+
                            '_xhtml_inline_headings() which is called from '+
@@ -865,7 +887,7 @@ class Fitzpage():
         self.xhtml = self.xhtml.replace('&#x2663;', '♣')
         self.xhtml = self.xhtml.replace('&#x2665;', '♥')
         self.xhtml = self.xhtml.replace('&#x2666;', '♦')
-        self.xhtml = self.xhtml.replace('&#x2026;', '…')
+        self.xhtml = self.xhtml.replace('&#x2026;', '...')
         # Ligatures
         self.xhtml = self.xhtml.replace('&#xfb00; ', 'ff')
         self.xhtml = self.xhtml.replace('&#xfb01; ', 'fi')
