@@ -82,6 +82,7 @@ class Fitzpage():
                                     flags=fitz.TEXT_PRESERVE_WHITESPACE+
                                           fitz.TEXT_DEHYPHENATE,
                                     sort=sorting)
+        self.textblocks = []
         for block in blocks:
             # Remove page number
             # if block[4].startswith(str(self.index)) or block[4].endswith(str(self.index)):
@@ -235,13 +236,13 @@ class Fitzpage():
         self.log.debug('Entering method "_check_text_data"')
         check_success = False
         if self.text == '':
-            self.log.warning('No text detected in plain text format, '+
+            self.log.warning('No previously extracted text detected, '+
                              'attempting to extract text as blocks')
             self.get_block_text(False)
             check_success = True
             if self.text == '':
                 self.log.warning('Could not extract any text in block '+
-                                 'text format from page % with index %s, '+
+                                 'text format from page %s with index %s, '+
                                  'attempting plain text detection',
                                  self.pagenumber, self.index)
                 self.get_plain_text(False)
@@ -510,7 +511,8 @@ class Fitzpage():
         #     print('=== TEXT ===')
         #     print(splittext[i])
         #     print('=== HTML ===')
-        #     print(splithtml[i])
+        #     if i < len(splithtml):
+        #         print(splithtml[i])
         #     print()
         return splithtml
 
@@ -544,6 +546,11 @@ class Fitzpage():
         if not self._check_xhtml_data():
             self.log.error('No xhtml data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
+        # Text needed later, for empty page the process can be stopped here
+        if not self._check_text_data():
+            self.log.error('No text data available, aborting fix_xhtml_line_breaks')
+            return self.xhtml
+
         self._xhtml_replacements()  # Fixes for mlti-column layout and unnecessary tags
         #
         # Add additional line breaks due to paragraphs
