@@ -102,7 +102,7 @@ class Fitzpage():
             # This might give unexpected results at the end of a page
             # because of a missing line break
             if self.text.endswith('-'):
-                self.text = self.text[0:len(self.text)-2]
+                self.text = self.text[0:len(self.text)-1]
             else:
                 self.text += '\n'
         self.text = self.text.replace('…', '...')
@@ -486,6 +486,10 @@ class Fitzpage():
         list item
         :rtype: list
         """
+        # Column breaks with hyphenation between them
+        # The fitz.TEXT_DEHYPHENATE will merge the columns together on text 
+        # extraction but not for XHTML extraction. Column breaks without 
+        # hyphenation stay separate in both and must be treated later
         self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
         self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
         splittext = self.text.split('\n')
@@ -541,8 +545,10 @@ class Fitzpage():
                            'fix_xhtml_line_breaks(), there is a mismatch in '+
                            'the number of paragraphs but they should be the same!\n'+
                            'Paragraphs in text format: %s\n'+
-                           'Paragraphs in HTML format: %s',
-                           len(splittext), len(splithtml))
+                           '%s'+
+                           'Paragraphs in HTML format: %s'+
+                           '%s',
+                           len(splittext), self.text , len(splithtml), self.xhtml)
         # Only for testing:
         # print(f'Final length text: {len(splittext)} - html: {len(splithtml)}')
         # for i in range(0,len(splittext)):
@@ -553,6 +559,123 @@ class Fitzpage():
         #         print(splithtml[i])
         #     print()
         return splithtml
+
+    def TESTING_xhtml_line_breaks_recover_breaks(self):
+        """
+        _xhtml_line_breaks_recover_breaks recovers the paragraph line breaks by 
+        splitting text and html by line breaks. It looks for the list items that 
+        start and end with paragraph tags in the html code and counts the period 
+        characters in both, text and html. If there is a mismatch, it recovers the 
+        missing paragraph + line break in the html-derived list.
+        In the end, both lists should have the same length.
+
+        :return: False if there was an error during paragraph recovery
+        :rtype: bool
+        """
+        # Column breaks with hyphenation between them
+        # The fitz.TEXT_DEHYPHENATE will merge the columns together on text 
+        # extraction but not for XHTML extraction. Column breaks without 
+        # hyphenation stay separate in both and must be treated later
+        self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
+        self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
+        # Analyze the text line by line
+        html_len = len(self.xhtml)
+        text_len = len(self.text)
+        character_count = max(text_len, html_len)
+        text_new = ''
+        xhtml_new = ''
+        # Go through the text
+        html_offset = 0
+        text_offset = 0
+        text_out_of_range = False
+        html_out_of_range = False
+        continue_index = 0
+        for i in range(0, character_count):
+            # Security check to not run out of range in either of the strings!
+            if i >= text_len:
+                text_out_of_range = True
+                continue_index = i
+                break
+            if i >= html_len:
+                html_out_of_range = True
+                continue_index = i
+                break
+            repeat_check = True
+            while repeat_check:
+                i_text = i + text_offset
+                i_html = i + html_offset
+                ct = self.text[i_text]
+                ch = self.xhtml[i_html]
+                # Skip over HTML tags
+                if ch == '<':
+                    search_tag_close = False
+                    for ci in range(i_html,html_len):
+                        ch = self.xhtml[ci]
+                        if ch == '<' or search_tag_close:
+                            xhtml_new += ch
+                            html_offset += 1
+                            search_tag_close = True
+                        else:
+                            break
+                        if ch == '>':
+                            search_tag_close = False
+                i_html = i + html_offset
+                ch = self.xhtml[i_html]
+                if ch == ct:
+                    text_new += ct
+                    xhtml_new += ch
+                    repeat_check = False
+                elif ch == '\n' and not ct == '\n':
+                    # HTML line breaks > add line break to text
+                    text_new += ch
+                    xhtml_new += ch
+                    repeat_check = False
+                elif ct == '\n' and not ch == '\n':
+                    # Text line breaks > add line break to HTML
+                    test_next_char = True
+                    while test_next_char:
+                        ch = self.xhtml[i_html]
+                        if ch == '<':
+                            for ci in range(i_html, len(self.xhtml)):
+                                ch = self.xhtml[ci]
+                                xhtml_new += ch
+                                html_offset += 1
+                                if ch == '>':
+                                    break
+                        else:
+                            test_next_char = False
+                    text_new += ct
+                    xhtml_new += ct
+                    repeat_check = False
+                elif ch == ' ' and not ct == ' ':
+                    # HTML has space, text not > add space to text
+                    # Text character must be processed again
+                    text_new += ch
+                    xhtml_new += ch
+                    html_offset += 1
+                    repeat_check = True
+                elif ct == ' ' and not ch == ' ':
+                    text_new += ch
+                    xhtml_new += ch
+                    text_offset += 1
+                    repeat_check = True
+                else:
+                    # TODO unhandled mismatch
+                    text_new += ch
+                    xhtml_new += ch
+                    repeat_check = False
+        if text_out_of_range:
+            for i in range(continue_index, character_count):
+                if i+html_offset >= character_count:
+                    break
+                xhtml_new += self.xhtml[i+html_offset]
+                text_new += '\n'
+        if html_out_of_range:
+            print('ERROR, HTML code is too short!!!')
+            return False
+        self.xhtml = xhtml_new
+        self.text = text_new
+        return True
 
     def _xhtml_line_breaks_assemble_html(self, splithtml:list):
         """
@@ -589,9 +712,12 @@ class Fitzpage():
             self.log.error('No text data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
 
-        self._xhtml_line_breaks_text_processing()
-        splithtml = self._xhtml_line_breaks_recover_breaks()
-        self._xhtml_line_breaks_assemble_html(splithtml)
+        # self._xhtml_line_breaks_text_processing()
+        self.get_block_text(False)
+        self.fix_text_ligature_spaces()
+        self.TESTING_xhtml_line_breaks_recover_breaks()
+        # splithtml = self._xhtml_line_breaks_recover_breaks()
+        # self._xhtml_line_breaks_assemble_html(splithtml)
         self._xhtml_inline_headings()
         self._xhtml_replacements()  # Fixes for multi-column layout and unnecessary tags
         #
@@ -619,6 +745,7 @@ class Fitzpage():
             self.log.error('No xhtml data available, aborting fix_xhtml_utf_characters')
             return self.xhtml
         # Replacements: https://de.wikipedia.org/wiki/Hilfe:Sonderzeichenreferenz
+        self.xhtml = self.xhtml.replace('&amp;', '&')
         self.xhtml = self.xhtml.replace('&#x21;', '!')
         self.xhtml = self.xhtml.replace('&#x23;', '#')
         self.xhtml = self.xhtml.replace('&#x24;', '$')
