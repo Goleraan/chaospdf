@@ -578,15 +578,16 @@ class Fitzpage():
         # hyphenation stay separate in both and must be treated later
         self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
         self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
+        # self.xhtml = self.xhtml.replace(' </p>\n<p>', ' ')
         # Analyze the text line by line
         html_len = len(self.xhtml)
         text_len = len(self.text)
         character_count = max(text_len, html_len)
-        text_new = ''
-        xhtml_new = ''
+        self.text_new = ''
+        self.xhtml_new = ''
         # Go through the text
-        html_offset = 0
-        text_offset = 0
+        self.html_offset = 0
+        self.text_offset = 0
         text_out_of_range = False
         html_out_of_range = False
         continue_index = 0
@@ -600,82 +601,124 @@ class Fitzpage():
                 html_out_of_range = True
                 continue_index = i
                 break
+            # Check and add characters
             repeat_check = True
             while repeat_check:
-                i_text = i + text_offset
-                i_html = i + html_offset
-                ct = self.text[i_text]
-                ch = self.xhtml[i_html]
+                self.i_text = i + self.text_offset
+                self.i_html = i + self.html_offset
+                self.ct = self.text[self.i_text]
+                self.ch = self.xhtml[self.i_html]
+                # if self.ch == '.':
+                #     print(i)
+                if i == 1224:
+                    print(i)
                 # Skip over HTML tags
-                if ch == '<':
-                    search_tag_close = False
-                    for ci in range(i_html,html_len):
-                        ch = self.xhtml[ci]
-                        if ch == '<' or search_tag_close:
-                            xhtml_new += ch
-                            html_offset += 1
-                            search_tag_close = True
-                        else:
-                            break
-                        if ch == '>':
-                            search_tag_close = False
-                i_html = i + html_offset
-                ch = self.xhtml[i_html]
-                if ch == ct:
-                    text_new += ct
-                    xhtml_new += ch
-                    repeat_check = False
-                elif ch == '\n' and not ct == '\n':
-                    # HTML line breaks > add line break to text
-                    text_new += ch
-                    xhtml_new += ch
-                    repeat_check = False
-                elif ct == '\n' and not ch == '\n':
-                    # Text line breaks > add line break to HTML
-                    test_next_char = True
-                    while test_next_char:
-                        ch = self.xhtml[i_html]
-                        if ch == '<':
-                            for ci in range(i_html, len(self.xhtml)):
-                                ch = self.xhtml[ci]
-                                xhtml_new += ch
-                                html_offset += 1
-                                if ch == '>':
-                                    break
-                        else:
-                            test_next_char = False
-                    text_new += ct
-                    xhtml_new += ct
-                    repeat_check = False
-                elif ch == ' ' and not ct == ' ':
-                    # HTML has space, text not > add space to text
-                    # Text character must be processed again
-                    text_new += ch
-                    xhtml_new += ch
-                    html_offset += 1
-                    repeat_check = True
-                elif ct == ' ' and not ch == ' ':
-                    text_new += ch
-                    xhtml_new += ch
-                    text_offset += 1
-                    repeat_check = True
-                else:
-                    # TODO unhandled mismatch
-                    text_new += ch
-                    xhtml_new += ch
-                    repeat_check = False
+                self._keep_html_tag(html_len)
+                self.i_html = i + self.html_offset
+                self.ch = self.xhtml[self.i_html]
+                repeat_check = self._add_characters()
         if text_out_of_range:
             for i in range(continue_index, character_count):
-                if i+html_offset >= character_count:
+                if i+self.html_offset >= character_count:
                     break
-                xhtml_new += self.xhtml[i+html_offset]
-                text_new += '\n'
+                self.xhtml_new += self.xhtml[i+self.html_offset]
+                self.text_new += '\n'
         if html_out_of_range:
             print('ERROR, HTML code is too short!!!')
             return False
-        self.xhtml = xhtml_new
-        self.text = text_new
+        self.xhtml = self.xhtml_new
+        self.text = self.text_new
         return True
+
+    def _add_characters(self):
+        # The order of the checks is important to cover the 
+        # column breaks. Space must be before line break
+        if self.ch == self.ct:
+            self.text_new += self.ct
+            self.xhtml_new += self.ch
+            return False
+        elif self.ch == ' ' and not self.ct == ' ':
+                    # HTML has space, text not > add space to text
+                    # Text character must be processed again
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+            self.html_offset += 1
+            return True
+        elif self.ct == ' ' and not self.ch == ' ':
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+            self.text_offset += 1
+            return True
+        elif self.ch == '\n' and not self.ct == '\n':
+            # HTML line breaks > add line break to text
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+            self.html_offset += 1
+            # self._keep_next_html_tag()
+            # test_next_char = True
+            # while test_next_char:
+            #     self.ch = self.xhtml[self.i_html+1]
+            #     # self.html_offset += 1
+            #     begin = self.i_html+1
+            #     if self.ch == '<':
+            #         for ci in range(begin, len(self.xhtml)):
+            #             self.ch = self.xhtml[ci]
+            #             self.xhtml_new += self.ch
+            #             self.html_offset += 1
+            #             self.i_html += 1
+            #             if self.ch == '>':
+            #                 break
+            #     else:
+            #         test_next_char = False
+            return True
+        elif self.ct == '\n' and not self.ch == '\n':
+            # Text line breaks > add line break to HTML
+            self._keep_next_html_tag()
+            return False
+        elif self.ch == '-' and not self.ct == '-':
+            # Handling of layout error when a headline repeats on every 
+            # page and is somewhere inside the text with hyphenation
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+            self.html_offset += 1
+            return True
+        else:
+            # TODO mismatch is not handled robustly
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+            return False
+
+    def _keep_next_html_tag(self):
+        test_next_char = True
+        while test_next_char:
+            self.ch = self.xhtml[self.i_html]
+            if self.ch == '<':
+                for ci in range(self.i_html, len(self.xhtml)):
+                    self.ch = self.xhtml[ci]
+                    self.xhtml_new += self.ch
+                    self.html_offset += 1
+                    # TODO THIS DOES NOT SEEM RIGHT
+                    self.i_html += 1  # ??
+                    if self.ch == '>':
+                        break
+            else:
+                test_next_char = False
+        self.text_new += self.ct
+        self.xhtml_new += self.ct
+
+    def _keep_html_tag(self, html_len):
+        if self.ch == '<':
+            self.search_tag_close = False
+            for ci in range(self.i_html,html_len):
+                self.ch = self.xhtml[ci]
+                if self.ch == '<' or self.search_tag_close:
+                    self.xhtml_new += self.ch
+                    self.html_offset += 1
+                    self.search_tag_close = True
+                else:
+                    break
+                if self.ch == '>':
+                    self.search_tag_close = False
 
     def _xhtml_line_breaks_assemble_html(self, splithtml:list):
         """
@@ -1004,6 +1047,7 @@ class Fitzpage():
         self.xhtml = self.xhtml.replace('&#x201e;', '„')
         self.xhtml = self.xhtml.replace('&#x2020;', '†')
         self.xhtml = self.xhtml.replace('&#x2021;', '‡')
+        self.xhtml = self.xhtml.replace('&#x2022;', '•')
         self.xhtml = self.xhtml.replace('&#x202f;', ' ')
         self.xhtml = self.xhtml.replace('&#x2030;', '‰')
         self.xhtml = self.xhtml.replace('&#x2039;', '‹')
