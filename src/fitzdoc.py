@@ -65,7 +65,7 @@ class Fitzdoc():
             p = Fitzpage(page, pn+page_offset)
             content = self.extract_text_from_page(p)
             self.page_text.append(content)
-            html += f'\n\n====== Page {pn+page_offset:04d} ======\n\n'
+            html += f'\n\n<p>====== Page {pn+page_offset:04d} ======</p>\n\n'
             html += content
         return html
 
