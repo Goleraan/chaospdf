@@ -480,7 +480,7 @@ class Fitzpage():
             for text in self.executed['repeating_xhtml']:
                 self.remove_text_repeating(text)
 
-    def _xhtml_line_breaks_recover_breaks(self):
+    def OUTDATED_xhtml_line_breaks_recover_breaks(self):
         """
         _xhtml_line_breaks_recover_breaks recovers the paragraph line breaks by 
         splitting text and html by line breaks. It looks for the list items that 
@@ -567,7 +567,7 @@ class Fitzpage():
         #     print()
         return splithtml
 
-    def TESTING_xhtml_line_breaks_recover_breaks(self):
+    def _xhtml_line_breaks_recover_breaks(self):
         """
         _xhtml_line_breaks_recover_breaks recovers the paragraph line breaks by 
         splitting text and html by line breaks. It looks for the list items that 
@@ -641,6 +641,7 @@ class Fitzpage():
                 self.xhtml_new += self.xhtml[i+self.html_offset]
                 self.text_new += '\n'
         if html_out_of_range:
+            self.log.critical('ERROR, HTML code is too short!!!')
             print('ERROR, HTML code is too short!!!')
             return False
         self.xhtml = self.xhtml_new
@@ -648,6 +649,13 @@ class Fitzpage():
         return True
 
     def _add_characters(self):
+        """
+        _add_characters assembles the new text and XHTML variables and handles some 
+        of the mismatches to have identical spaces and line breaks in both extractions.
+
+        :return: True if there was no mismatch without handling method
+        :rtype: bool
+        """
         # The order of the checks is important to cover the 
         # column breaks. Space must be before line break
         if self.ch == self.ct and not self.mismatch:
@@ -699,6 +707,9 @@ class Fitzpage():
             return False
 
     def _keep_next_html_tag(self):
+        """
+        _keep_next_html_tag recovers HTML tags for the next character
+        """
         # ! This method is not implemented correctly and can lead to an endless loop
         # ! the update for self.i_html is missing, it cannot be changed when used
         # ! inside the range - tried to fix it but might not be correct
@@ -719,7 +730,13 @@ class Fitzpage():
         self.text_new += self.ct
         self.xhtml_new += self.ct
 
-    def _keep_html_tag(self, html_len):
+    def _keep_html_tag(self, html_len:int):
+        """
+        _keep_html_tag recovers the HTML tag for the current character
+
+        :param html_len: length of the XHTML string
+        :type html_len: int
+        """
         if self.ch == '<':
             search_tag_close = False
             for ci in range(self.i_html,html_len):
@@ -771,7 +788,7 @@ class Fitzpage():
         # self._xhtml_line_breaks_text_processing()
         self.get_block_text(False)
         self.fix_text_ligature_spaces()
-        self.TESTING_xhtml_line_breaks_recover_breaks()
+        self._xhtml_line_breaks_recover_breaks()
         # splithtml = self._xhtml_line_breaks_recover_breaks()
         # self._xhtml_line_breaks_assemble_html(splithtml)
         self._xhtml_inline_headings()
