@@ -43,6 +43,13 @@ class Fitzpage():
                          'remove_xhtml_page_number': False,
                          'fix_xhtml_line_breaks': False,
                          'fix_xhtml_utf_characters': False}
+        self.text_new = ''
+        self.xhtml_new = ''
+        self.html_offset = 0
+        self.text_offset = 0
+        self.i_text = ''
+        self.i_html = ''
+        self.mismatch = False
 
     def get_plain_text(self, sorting:bool):
         """
@@ -578,7 +585,7 @@ class Fitzpage():
         # hyphenation stay separate in both and must be treated later
         self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
         self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
-        # self.xhtml = self.xhtml.replace(' </p>\n<p>', ' ')
+        self.xhtml = self.xhtml.replace('-</p>\n<p>', '')
         # Analyze the text line by line
         html_len = len(self.xhtml)
         text_len = len(self.text)
@@ -606,12 +613,22 @@ class Fitzpage():
             while repeat_check:
                 self.i_text = i + self.text_offset
                 self.i_html = i + self.html_offset
+                if self.i_text >= text_len:
+                    self.log.error('Outside range of text %s', self.i_text)
+                    self.text_new += '\n\n==== ERROR processing page====\n\n'
+                    self.xhtml_new += '\n\n<p>==== ERROR processing page====</p>\n\n'
+                    self.xhtml = self.xhtml_new
+                    self.text = self.text_new
+                    return False
+                if self.i_html >= html_len:
+                    self.log.error('Outside range of XHTML %s', self.i_html)
+                    self.text_new += '\n\n==== ERROR processing page====\n\n'
+                    self.xhtml_new += '\n\n<p>==== ERROR processing page====</p>\n\n'
+                    self.xhtml = self.xhtml_new
+                    self.text = self.text_new
+                    return False
                 self.ct = self.text[self.i_text]
                 self.ch = self.xhtml[self.i_html]
-                # if self.ch == '.':
-                #     print(i)
-                if i == 1224:
-                    print(i)
                 # Skip over HTML tags
                 self._keep_html_tag(html_len)
                 self.i_html = i + self.html_offset
@@ -633,71 +650,67 @@ class Fitzpage():
     def _add_characters(self):
         # The order of the checks is important to cover the 
         # column breaks. Space must be before line break
-        if self.ch == self.ct:
+        if self.ch == self.ct and not self.mismatch:
             self.text_new += self.ct
             self.xhtml_new += self.ch
             return False
-        elif self.ch == ' ' and not self.ct == ' ':
+        elif self.ch == ' ' and not self.ct == ' ' and not self.mismatch:
                     # HTML has space, text not > add space to text
                     # Text character must be processed again
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.html_offset += 1
             return True
-        elif self.ct == ' ' and not self.ch == ' ':
+        elif self.ct == ' ' and not self.ch == ' ' and not self.mismatch:
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.text_offset += 1
             return True
-        elif self.ch == '\n' and not self.ct == '\n':
+        elif self.ch == '\n' and not self.ct == '\n' and not self.mismatch:
             # HTML line breaks > add line break to text
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.html_offset += 1
-            # self._keep_next_html_tag()
-            # test_next_char = True
-            # while test_next_char:
-            #     self.ch = self.xhtml[self.i_html+1]
-            #     # self.html_offset += 1
-            #     begin = self.i_html+1
-            #     if self.ch == '<':
-            #         for ci in range(begin, len(self.xhtml)):
-            #             self.ch = self.xhtml[ci]
-            #             self.xhtml_new += self.ch
-            #             self.html_offset += 1
-            #             self.i_html += 1
-            #             if self.ch == '>':
-            #                 break
-            #     else:
-            #         test_next_char = False
             return True
-        elif self.ct == '\n' and not self.ch == '\n':
+        elif self.ct == '\n' and not self.ch == '\n' and not self.mismatch:
             # Text line breaks > add line break to HTML
             self._keep_next_html_tag()
             return False
-        elif self.ch == '-' and not self.ct == '-':
+        elif self.ch == '-' and not self.ct == '-' and not self.mismatch:
             # Handling of layout error when a headline repeats on every 
             # page and is somewhere inside the text with hyphenation
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.html_offset += 1
             return True
+        elif not self.ch == self.ct and not self.mismatch:
+            # TODO mismatch is not handled robustly
+            self.log.critical('Mismatch between text and HTML content at '+
+                           'text index %d and XHTML index %d',
+                           self.i_text, self.i_html)
+            self.mismatch = True
+            self.text_new += self.ct
+            self.xhtml_new += self.ch
         else:
             # TODO mismatch is not handled robustly
-            self.text_new += self.ch
+            self.mismatch = True
+            self.text_new += self.ct
             self.xhtml_new += self.ch
             return False
 
     def _keep_next_html_tag(self):
+        # ! This method is not implemented correctly and can lead to an endless loop
+        # ! the update for self.i_html is missing, it cannot be changed when used
+        # ! inside the range - tried to fix it but might not be correct
         test_next_char = True
         while test_next_char:
             self.ch = self.xhtml[self.i_html]
             if self.ch == '<':
-                for ci in range(self.i_html, len(self.xhtml)):
+                begin = self.i_html
+                for ci in range(begin, len(self.xhtml)):
                     self.ch = self.xhtml[ci]
                     self.xhtml_new += self.ch
                     self.html_offset += 1
-                    # TODO THIS DOES NOT SEEM RIGHT
                     self.i_html += 1  # ??
                     if self.ch == '>':
                         break
@@ -708,17 +721,17 @@ class Fitzpage():
 
     def _keep_html_tag(self, html_len):
         if self.ch == '<':
-            self.search_tag_close = False
+            search_tag_close = False
             for ci in range(self.i_html,html_len):
                 self.ch = self.xhtml[ci]
-                if self.ch == '<' or self.search_tag_close:
+                if self.ch == '<' or search_tag_close:
                     self.xhtml_new += self.ch
                     self.html_offset += 1
-                    self.search_tag_close = True
+                    search_tag_close = True
                 else:
                     break
                 if self.ch == '>':
-                    self.search_tag_close = False
+                    search_tag_close = False
 
     def _xhtml_line_breaks_assemble_html(self, splithtml:list):
         """
