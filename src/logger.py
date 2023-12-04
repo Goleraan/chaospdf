@@ -29,7 +29,7 @@ class Logger():
                            {'format': '%(asctime)s:%(name)s:%(levelname)s:%(message)s'}},
                        'handlers': {'console': {'class': 'logging.StreamHandler',
                                                 'formatter': 'default_format',
-                                                'level': logging.DEBUG,
+                                                'level': logging.ERROR,
                                                 'stream': 'ext://sys.stdout'},
                                     'file': {'class': 'logging.FileHandler',
                                              'formatter': 'default_format',
