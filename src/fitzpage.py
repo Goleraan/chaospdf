@@ -693,16 +693,54 @@ class Fitzpage():
             self.xhtml_new += self.ch
             self.html_offset += 1
             return True
-        elif not self.ch == self.ct and not self.mismatch:
-            # TODO mismatch is not handled robustly
-            self.log.critical('Mismatch between text and HTML content at '+
-                           'text index %d and XHTML index %d',
-                           self.i_text, self.i_html)
-            self.mismatch = True
+        elif self.ch == ' ' and self.ct == '\u2009':
+            # Thin space handling
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+        elif self.ch == '›' and self.ct == '>':
+            # Greater than symbol replaced in HTML before
             self.text_new += self.ct
             self.xhtml_new += self.ch
+        elif self.ch == '‹' and self.ct == '<':
+            # Less than symbol replaced in HTML before
+            self.text_new += self.ct
+            self.xhtml_new += self.ch
+        elif self.ch == '.' and self.ct == '�':
+            # Observed in Alien PDFs in the TOC
+            self.text_new += self.ch
+            self.xhtml_new += self.ch
+        elif self.ch == '※' and self.ct =='\xad':
+            # Replacement for a soft hyphen
+            # Nothing must be done here, these should not appear
+            pass
+        elif self.ch == '⊂' and (self.ct == '\uf0e9' or self.ct == '\uf0ea' or self.ct == '\uf051' or self.ct == '\uf0a1' or self.ct == '\uf04e'):
+            # Replacement for a private symbol that could be anything
+            self.text_new += '.'
+            self.xhtml_new += '.'
+        elif not self.ch == self.ct and not self.mismatch:
+            # ! This is a fallback bechanism to keep the text untouched
+            # Handling of a single quote:
+            checks_failed = False
+            if self.ch == '&' and self.ct == "'":
+                # ! This can run out of range!!
+                next_chars = self.xhtml[self.i_html:self.i_html+6]
+                if next_chars == '&apos;':
+                    self.html_offset += 5
+                    self.text_new += self.ct
+                    self.xhtml_new += '&apos;'
+                else:
+                    checks_failed = True
+            else:
+                checks_failed = True
+            if checks_failed:
+                self.log.critical('Mismatch between text and HTML content at '+
+                            'text index %d and XHTML index %d',
+                            self.i_text, self.i_html)
+                self.mismatch = True
+                self.text_new += self.ct
+                self.xhtml_new += self.ch
         else:
-            # TODO mismatch is not handled robustly
+            # ! This is a fallback bechanism to keep the text untouched
             self.mismatch = True
             self.text_new += self.ct
             self.xhtml_new += self.ch
@@ -1091,6 +1129,29 @@ class Fitzpage():
         self.xhtml = self.xhtml.replace('&#x2665;', '♥')
         self.xhtml = self.xhtml.replace('&#x2666;', '♦')
         self.xhtml = self.xhtml.replace('&#x2026;', '...')
+        self.xhtml = self.xhtml.replace('&#x10c;', 'Č')
+        self.xhtml = self.xhtml.replace('&#x25a0;', '■')
+        self.xhtml = self.xhtml.replace('&#x2009;', ' ')
+        self.xhtml = self.xhtml.replace('&lt;', '‹')
+        self.xhtml = self.xhtml.replace('&gt;', '›')
+        self.xhtml = self.xhtml.replace('&#x25ba;', '►')
+        self.xhtml = self.xhtml.replace('&#xfffd;', '.')
+        self.xhtml = self.xhtml.replace('&#x2751;', '❑')
+        self.xhtml = self.xhtml.replace('&#x25c6;', '◆')
+        self.xhtml = self.xhtml.replace('&#x2c7;', 'ˇ')
+        self.xhtml = self.xhtml.replace('&#x17d;', 'Ž')
+        self.xhtml = self.xhtml.replace('&#x17e;', 'ž')
+        self.xhtml = self.xhtml.replace('&#x2bc;', 'ʼ')
+        self.xhtml = self.xhtml.replace('&#x18f;', 'Ə')
+        self.xhtml = self.xhtml.replace('&#x2752;', '❒')
+        self.xhtml = self.xhtml.replace('&#x141;', 'Ł')
+        self.xhtml = self.xhtml.replace('&#xad;', '※')  # This is a soft-hyphen but needs a symbol to handle it during paragraph recovery
+        self.xhtml = self.xhtml.replace('&#xf0e9;', '⊂')  # Private use, could be anything, replaced during paragraph recovery
+        # Private use, could be anything, replaced during paragraph recovery
+        self.xhtml = self.xhtml.replace('&#xf0ea;', '⊂')
+        self.xhtml = self.xhtml.replace('&#xf051;', '⊂')
+        self.xhtml = self.xhtml.replace('&#xf0a1;', '⊂')
+        self.xhtml = self.xhtml.replace('&#xf04e;', '⊂')
         # Ligatures
         self.xhtml = self.xhtml.replace('&#xfb00; ', 'ff')
         self.xhtml = self.xhtml.replace('&#xfb01; ', 'fi')
