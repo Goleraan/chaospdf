@@ -49,6 +49,8 @@ class Fitzpage():
         self.text_offset = 0
         self.i_text = ''
         self.i_html = ''
+        self.ct = ''
+        self.ch = ''
         self.mismatch = False
 
     def get_plain_text(self, sorting:bool):
