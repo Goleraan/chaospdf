@@ -122,7 +122,7 @@ class Fitzdoc():
         page.get_xhtml()
         page.fix_xhtml_utf_characters()
         page.fix_xhtml_line_breaks()
-        if not self.repeating_text_to_remove == []:
+        if self.repeating_text_to_remove:
             for text in self.repeating_text_to_remove:
                 page.remove_xhtml_repeating(text)
         page.remove_xhtml_page_number()
@@ -144,7 +144,8 @@ class Fitzdoc():
             p.get_block_text(False)
             numbers_on_page = []
             for paragraph in p.textblocks:
-                # Find only strings that start with a number, see https://regextutorial.org/regex-for-numbers-and-ranges.php
+                # Find only strings that start with a number, see
+                # https://regextutorial.org/regex-for-numbers-and-ranges.php
                 m = re.match(r'\d+', paragraph)
                 if m is not None:
                     numbers_on_page.append(m.group(0))
@@ -163,7 +164,8 @@ class Fitzdoc():
         if len(potential_offsets) == 0:
             self.log.warning('Could not find any potential page numbers in document')
             return 0
-        # For a discussion on this see https://stackoverflow.com/questions/6987285/find-the-item-with-maximum-occurrences-in-a-list
+        # For a discussion on this see
+        # https://stackoverflow.com/questions/6987285/find-the-item-with-maximum-occurrences-in-a-list
         most_probable_offset = max(potential_offsets, key=potential_offsets.count)
         self.log.info('Probable page offset: %d', most_probable_offset)
         return most_probable_offset
@@ -184,7 +186,7 @@ class Fitzdoc():
         for pn, page in enumerate(self.doc):
             p = Fitzpage(page, pn)
             p.get_block_text(False)
-            if p.textblocks == []:
+            if not p.textblocks:
                 continue
             for paragraph in p.textblocks:
                 all_blocks.append(paragraph)
