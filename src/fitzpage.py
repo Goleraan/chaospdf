@@ -7,13 +7,15 @@ import logging
 import re
 import fitz
 
+
 class Fitzpage():
     """
     Fitzpage uses PyMuPDF to extract and process text from PDF documents. It offers various 
     helper functions to clean-up the extracted plain text or in xHTML format, which contains 
     some of the original formatting in old-school HTML without CSS.
     """
-    def __init__(self, page:fitz.Page, index:int):
+
+    def __init__(self, page: fitz.Page, index: int):
         self.log = logging.getLogger('page')
         self.log.debug('Initializing page %s', str(index))
         self.page = page
@@ -24,8 +26,8 @@ class Fitzpage():
         self.html = ''  # Extracted HTML code by get_html
         self.xhtml = ''  # Extracted XHTML code by get_xhtml
         self.xhtml_ligatures = ''  # Extracted XHTML code by get_xhtml without
-                                   # processing ligatures
-                                   # NOT USED, CODE IS STILL IN BUT DISABLED
+        # processing ligatures
+        # NOT USED, CODE IS STILL IN BUT DISABLED
         self.dicttext = {}  # Extracted dictionary by get_dict
         self.executed = {'get_plain_text': False,
                          'get_block_text': False,
@@ -53,7 +55,7 @@ class Fitzpage():
         self.ch = ''
         self.mismatch = False
 
-    def get_plain_text(self, sorting:bool):
+    def get_plain_text(self, sorting: bool):
         """
         get_plain_text Extracts text from a PDF file in plain text format.
 
@@ -65,17 +67,17 @@ class Fitzpage():
         self.log.debug('Entering method "get_plain_text"')
         # Flags see https://pymupdf.readthedocs.io/en/latest/vars.html#textpreserve
         self.text = self.page.get_text('text',
-                                       flags=fitz.TEXT_PRESERVE_WHITESPACE+
-                                             fitz.TEXT_DEHYPHENATE,
+                                       flags=fitz.TEXT_PRESERVE_WHITESPACE +
+                                       fitz.TEXT_DEHYPHENATE,
                                        sort=sorting)
         if self.text == '':
-            self.log.error('Could not detect any text in plain text '+
+            self.log.error('Could not detect any text in plain text ' +
                            'format on page %s with index %s',
                            self.pagenumber, self.index)
         self.executed['get_plain_text'] = True
         return self.text
 
-    def get_block_text(self, sorting:bool):
+    def get_block_text(self, sorting: bool):
         """
         get_block_text Extracts text from a PDF file block by block or 
         paragraph by paragraph
@@ -88,17 +90,17 @@ class Fitzpage():
         self.log.debug('Entering method "get_block_text"')
         # Detect the text blocks
         blocks = self.page.get_text('blocks',
-                                    flags=fitz.TEXT_PRESERVE_WHITESPACE+
-                                          fitz.TEXT_DEHYPHENATE,
+                                    flags=fitz.TEXT_PRESERVE_WHITESPACE +
+                                    fitz.TEXT_DEHYPHENATE,
                                     sort=sorting)
         self.textblocks = []
         for block in blocks:
             # Remove page number
             # if block[4].startswith(str(self.index)) or block[4].endswith(str(self.index)):
             #     continue
-            self.textblocks.append(block[4].replace('\n',''))
+            self.textblocks.append(block[4].replace('\n', ''))
         if len(self.textblocks) == 0:
-            self.log.error('Could not detect any text in block format '+
+            self.log.error('Could not detect any text in block format ' +
                            'on page %s with index %s, attempting to get plain text',
                            self.pagenumber, self.index)
             self.get_plain_text(sorting)
@@ -133,7 +135,8 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_text_ligature_spaces"')
         if not self._check_text_data():
-            self.log.error('No plain text data available, aborting fix_text_ligature_spaces')
+            self.log.error(
+                'No plain text data available, aborting fix_text_ligature_spaces')
             return self.text
         # The implementation is not robust because there is only one space
         # at the end of the words like 'ist' or 'Stoff'
@@ -160,16 +163,17 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_text_line_breaks"')
         if not self._check_text_data():
-            self.log.error('No plain text data available, aborting fix_text_line_breaks')
+            self.log.error(
+                'No plain text data available, aborting fix_text_line_breaks')
             return self.text
         # Idea:
-        #  - Find all appearances of strings like ".D", where a capital letter 
+        #  - Find all appearances of strings like ".D", where a capital letter
         #    follows a period
         #  - Save these in a list
-        #  - In the original string, replace each of these with a line break 
+        #  - In the original string, replace each of these with a line break
         #    between the period and the letter
-        # The implementation might run too many replace operations because of 
-        # duplicate entries in the list. This should only increase the run time 
+        # The implementation might run too many replace operations because of
+        # duplicate entries in the list. This should only increase the run time
         # and not harm the text itself.
         breaks = re.findall(r'\.[A-ZÄÖÜ]', self.text)
         if len(breaks) > 0:
@@ -192,22 +196,25 @@ class Fitzpage():
         """
         self.log.debug('Entering method "remove_text_page_number"')
         if not self._check_text_data():
-            self.log.error('No plain text data available, aborting remove_text_page_number')
+            self.log.error(
+                'No plain text data available, aborting remove_text_page_number')
             return self.text
         # probably easier to do within get_block_text()
         if self.text.startswith(f'{self.index}\n'):
-            self.log.debug('Found the page number at the beginning of the page')
+            self.log.debug(
+                'Found the page number at the beginning of the page')
             self.text = self.text[len(str(self.index))+1:]
         elif self.text.endswith(f'\n{self.index}'):
             self.log.debug('Found the page number at the end of the page')
             self.text = self.text[:-len(str(self.index))]  # does this work??
         else:
-            self.log.debug('Attempting to remove the page number somewhere else on the page')
+            self.log.debug(
+                'Attempting to remove the page number somewhere else on the page')
             self.text = self.text.replace(f'\n{self.index}\n', '')
         self.executed['remove_text_page_number'] = True
         return self.text
 
-    def remove_text_repeating(self, text:str):
+    def remove_text_repeating(self, text: str):
         """
         remove_text_repeating removes the specified string from the detected text, 
         if it is followed by a line break.
@@ -223,7 +230,8 @@ class Fitzpage():
         # probably easier to do within get_block_text()
         self.log.debug('Entering method "remove_text_repeating"')
         if not self._check_text_data():
-            self.log.error('No plain text data available, aborting remove_text_repeating')
+            self.log.error(
+                'No plain text data available, aborting remove_text_repeating')
             return self.text
         self.text = self.text.replace(text+'\n', '')
         self.executed['remove_text_repeating'] = True
@@ -246,18 +254,18 @@ class Fitzpage():
         self.log.debug('Entering method "_check_text_data"')
         check_success = False
         if self.text == '':
-            self.log.warning('No previously extracted text detected, '+
+            self.log.warning('No previously extracted text detected, ' +
                              'attempting to extract text as blocks')
             self.get_block_text(False)
             check_success = True
             if self.text == '':
-                self.log.warning('Could not extract any text in block '+
-                                 'text format from page %s with index %s, '+
+                self.log.warning('Could not extract any text in block ' +
+                                 'text format from page %s with index %s, ' +
                                  'attempting plain text detection',
                                  self.pagenumber, self.index)
                 self.get_plain_text(False)
                 if self.text == '':
-                    self.log.error('Could not extract any text in plain '+
+                    self.log.error('Could not extract any text in plain ' +
                                    'text format from page %s with index %s',
                                    self.pagenumber, self.index)
                     check_success = False
@@ -277,8 +285,8 @@ class Fitzpage():
         """
         self.log.debug('Entering method "get_html"')
         self.html = self.page.get_text('html',
-                                       flags=fitz.TEXT_PRESERVE_WHITESPACE+
-                                             fitz.TEXT_DEHYPHENATE)
+                                       flags=fitz.TEXT_PRESERVE_WHITESPACE +
+                                       fitz.TEXT_DEHYPHENATE)
         self.executed['get_html'] = True
         return self.html
 
@@ -292,9 +300,9 @@ class Fitzpage():
         """
         self.log.debug('Entering method "get_dict_text"')
         self.dicttext = self.page.get_text('dict',
-                                           flags=fitz.TEXT_PRESERVE_LIGATURES+
-                                                 fitz.TEXT_PRESERVE_WHITESPACE+
-                                                 fitz.TEXT_DEHYPHENATE)
+                                           flags=fitz.TEXT_PRESERVE_LIGATURES +
+                                           fitz.TEXT_PRESERVE_WHITESPACE +
+                                           fitz.TEXT_DEHYPHENATE)
         self.executed['get_dict_text'] = True
         return self.dicttext
 
@@ -313,15 +321,15 @@ class Fitzpage():
         #                                 flags=fitz.TEXT_PRESERVE_WHITESPACE+
         #                                       fitz.TEXT_DEHYPHENATE)
         self.xhtml = self.page.get_text('xhtml',
-                                        flags=fitz.TEXT_PRESERVE_LIGATURES+
-                                              fitz.TEXT_PRESERVE_WHITESPACE+
-                                              fitz.TEXT_DEHYPHENATE)
+                                        flags=fitz.TEXT_PRESERVE_LIGATURES +
+                                        fitz.TEXT_PRESERVE_WHITESPACE +
+                                        fitz.TEXT_DEHYPHENATE)
         # self.xhtml_ligatures = self.page.get_text('xhtml',
         #                                           flags=fitz.TEXT_PRESERVE_LIGATURES+
         #                                                 fitz.TEXT_PRESERVE_WHITESPACE+
         #                                                 fitz.TEXT_DEHYPHENATE)
         if self.xhtml == '':
-            self.log.error('Could not detect any text in xhtml format '+
+            self.log.error('Could not detect any text in xhtml format ' +
                            'on page %s with index %s',
                            self.pagenumber, self.index)
             return self.xhtml
@@ -348,10 +356,11 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_xhtml_ligature_spaces"')
         if not self._check_xhtml_data():
-            self.log.error('No xhtml data available, aborting fix_xhtml_ligature_spaces')
+            self.log.error(
+                'No xhtml data available, aborting fix_xhtml_ligature_spaces')
             return self.xhtml
-        self.log.warning('It is recommended to run fix_xhtml_utf_characters '+
-                         'to fix ligatures together with the '+
+        self.log.warning('It is recommended to run fix_xhtml_utf_characters ' +
+                         'to fix ligatures together with the ' +
                          'fitz.TEXT_PRESERVE_LIGATURES flag in get_xhtml')
         self.xhtml = self.xhtml.replace('ff ', 'ff')
         self.xhtml = self.xhtml.replace('fi ', 'fi')
@@ -363,7 +372,7 @@ class Fitzpage():
         self.executed['fix_xhtml_ligature_spaces'] = True
         return self.xhtml
 
-    def remove_xhtml_repeating(self, text:str):
+    def remove_xhtml_repeating(self, text: str):
         """
         remove_xhtml_repeating tries to remove the provided string from the extracted text. 
         The string should be located on its own line, like it is the case for repeated 
@@ -380,13 +389,16 @@ class Fitzpage():
         # probably easier to do within get_xhtml()
         self.log.debug('Entering method "remove_text_repeating"')
         if not self._check_xhtml_data():
-            self.log.error('No xhtml data available, aborting remove_xhtml_repeating')
+            self.log.error(
+                'No xhtml data available, aborting remove_xhtml_repeating')
             return self.xhtml
         self.xhtml = self.xhtml.replace(text+'\n', '')
         self.xhtml = re.sub(text+r'\n', '', self.xhtml)
         self.xhtml = re.sub(r'<h[1-6]>'+text+r'</h[1-6]>\n', '', self.xhtml)
-        self.xhtml = re.sub(r'<h[1-6]><b>'+text+r'</b></h[1-6]>\n', '', self.xhtml)
-        self.xhtml = re.sub(r'<h[1-6]><i>'+text+r'</i></h[1-6]>\n', '', self.xhtml)
+        self.xhtml = re.sub(r'<h[1-6]><b>'+text +
+                            r'</b></h[1-6]>\n', '', self.xhtml)
+        self.xhtml = re.sub(r'<h[1-6]><i>'+text +
+                            r'</i></h[1-6]>\n', '', self.xhtml)
         self.xhtml = re.sub(r'<p>'+text+r'</p>\n', '', self.xhtml)
         self.xhtml = re.sub(r'<p><b>'+text+r'</b></p>\n', '', self.xhtml)
         self.xhtml = re.sub(r'<p><i>'+text+r'</i></p>\n', '', self.xhtml)
@@ -407,7 +419,8 @@ class Fitzpage():
         """
         self.log.debug('Entering method "remove_xhtml_page_number"')
         if not self._check_xhtml_data():
-            self.log.error('No xhtml data available, aborting remove_xhtml_page_number')
+            self.log.error(
+                'No xhtml data available, aborting remove_xhtml_page_number')
             return self.xhtml
         xhtml = ''
         for line in self.xhtml.split('\n'):
@@ -429,10 +442,13 @@ class Fitzpage():
         It removes incorrect paragraphs due to multi-column layout.
         It also removes unnecessary HTML tags.
         """
-        self.xhtml = self.xhtml.replace(' </p>\n<p>', ' ')  # Fix multi-column-layout
+        self.xhtml = self.xhtml.replace(
+            ' </p>\n<p>', ' ')  # Fix multi-column-layout
         self.xhtml = self.xhtml.replace(' </p><p>', ' ')
-        self.xhtml = self.xhtml.replace('<b> </b>', '')  # Remove unnecessary tags
-        self.xhtml = self.xhtml.replace('<i> </i>', '')  # Remove unnecessary tags
+        self.xhtml = self.xhtml.replace(
+            '<b> </b>', '')  # Remove unnecessary tags
+        self.xhtml = self.xhtml.replace(
+            '<i> </i>', '')  # Remove unnecessary tags
 
     def _xhtml_inline_headings(self):
         """
@@ -473,7 +489,7 @@ class Fitzpage():
         """
         self.get_block_text(False)
         if (self.executed['fix_xhtml_utf_characters'] or
-            self.executed['fix_xhtml_ligature_spaces']):
+                self.executed['fix_xhtml_ligature_spaces']):
             self.fix_text_ligature_spaces()
         self.fix_text_line_breaks()
         if self.executed['remove_xhtml_page_number']:
@@ -481,93 +497,6 @@ class Fitzpage():
         if self.executed['remove_xhtml_repeating']:
             for text in self.executed['repeating_xhtml']:
                 self.remove_text_repeating(text)
-
-    def OUTDATED_xhtml_line_breaks_recover_breaks(self):
-        """
-        _xhtml_line_breaks_recover_breaks recovers the paragraph line breaks by 
-        splitting text and html by line breaks. It looks for the list items that 
-        start and end with paragraph tags in the html code and counts the period 
-        characters in both, text and html. If there is a mismatch, it recovers the 
-        missing paragraph + line break in the html-derived list.
-        In the end, both lists should have the same length.
-
-        :return: The list for the html code with one heading or paragraph for each 
-        list item
-        :rtype: list
-        """
-        # Column breaks with hyphenation between them
-        # The fitz.TEXT_DEHYPHENATE will merge the columns together on text 
-        # extraction but not for XHTML extraction. Column breaks without 
-        # hyphenation stay separate in both and must be treated later
-        self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
-        self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
-        splittext = self.text.split('\n')
-        splithtml = self.xhtml.split('\n')
-        for i, text_paragraph in enumerate(splittext):
-            if i >= len(splithtml):
-                self.log.error('Mismatch in text and HTML number of paragraphs in '+
-                               'fix_xhtml_line_breaks for line %s', i)
-                break
-            if splithtml[i].endswith('</p>'):
-                # Count the number of periods in both texts.
-                # Direct text length comparison does not work because there can be 
-                # offsets due to the text operations like ligature handling.
-                period_count_text = text_paragraph.count('.')
-                period_count_html = splithtml[i].count('.')
-                period_positions = []
-                # If the HTML code contains more periods, it's missing in-block paragraphs.
-                # They can be recovered by the using the positions of the periods.
-                case1 = (period_count_text < period_count_html) and (
-                         period_count_text > 0)
-                case2 = splithtml[i].endswith(':</p>') and not (
-                        text_paragraph.endswith(':')) and (
-                        period_count_text > 0)
-                case3 = text_paragraph.endswith('.') and not (
-                        splithtml[i].endswith('.</p>') or (
-                            splithtml[i].endswith('.</i></p>')) or (
-                            splithtml[i].endswith('.</b></p>'))) and (
-                        period_count_text > 0)
-                if case1 or case2 or case3:
-                    for pos, char in enumerate(splithtml[i]):
-                        if char == '.':
-                            period_positions.append(pos)
-                    if i+1 < len(splithtml):
-                        splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
-                    else:
-                        splithtml.append('<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
-                    splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
-                # elif splithtml[i].endswith(':</p>') and not text_paragraph.endswith(':'):
-                #     for pos, char in enumerate(splithtml[i]):
-                #         if char == '.':
-                #             period_positions.append(pos)
-                #     splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
-                #     splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
-                # elif text_paragraph.endswith('.') and not (splithtml[i].endswith('.</p>') or splithtml[i].endswith('.</i></p>') or splithtml[i].endswith('.</b></p>')):
-                #     for pos, char in enumerate(splithtml[i]):
-                #         if char == '.':
-                #             period_positions.append(pos)
-                #     splithtml.insert(i+1, '<p>'+splithtml[i][period_positions[period_count_text-1]+2:])
-                #     splithtml[i] = splithtml[i][:period_positions[period_count_text-1]+1]+'</p>'
-        if len(splittext) != len(splithtml):
-            self.log.error('After recovering the in-block paragraphs in '+
-                           '_xhtml_inline_headings() which is called from '+
-                           'fix_xhtml_line_breaks(), there is a mismatch in '+
-                           'the number of paragraphs but they should be the same!\n'+
-                           'Paragraphs in text format: %s\n'+
-                           '%s'+
-                           'Paragraphs in HTML format: %s'+
-                           '%s',
-                           len(splittext), self.text , len(splithtml), self.xhtml)
-        # Only for testing:
-        # print(f'Final length text: {len(splittext)} - html: {len(splithtml)}')
-        # for i in range(0,len(splittext)):
-        #     print('=== TEXT ===')
-        #     print(splittext[i])
-        #     print('=== HTML ===')
-        #     if i < len(splithtml):
-        #         print(splithtml[i])
-        #     print()
-        return splithtml
 
     def _xhtml_line_breaks_recover_breaks(self):
         """
@@ -582,8 +511,8 @@ class Fitzpage():
         :rtype: bool
         """
         # Column breaks with hyphenation between them
-        # The fitz.TEXT_DEHYPHENATE will merge the columns together on text 
-        # extraction but not for XHTML extraction. Column breaks without 
+        # The fitz.TEXT_DEHYPHENATE will merge the columns together on text
+        # extraction but not for XHTML extraction. Column breaks without
         # hyphenation stay separate in both and must be treated later
         self.xhtml = self.xhtml.replace('-</i></p>\n<p><i>', '')
         self.xhtml = self.xhtml.replace('-</b></p>\n<p><b>', '')
@@ -658,36 +587,36 @@ class Fitzpage():
         :return: True if there was no mismatch without handling method
         :rtype: bool
         """
-        # The order of the checks is important to cover the 
+        # The order of the checks is important to cover the
         # column breaks. Space must be before line break
         if self.ch == self.ct and not self.mismatch:
             self.text_new += self.ct
             self.xhtml_new += self.ch
             return False
-        elif self.ch == ' ' and not self.ct == ' ' and not self.mismatch:
-                    # HTML has space, text not > add space to text
-                    # Text character must be processed again
+        elif self.ch == ' ' and self.ct != ' ' and not self.mismatch:
+            # HTML has space, text not > add space to text
+            # Text character must be processed again
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.html_offset += 1
             return True
-        elif self.ct == ' ' and not self.ch == ' ' and not self.mismatch:
+        elif self.ct == ' ' and self.ch != ' ' and not self.mismatch:
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.text_offset += 1
             return True
-        elif self.ch == '\n' and not self.ct == '\n' and not self.mismatch:
+        elif self.ch == '\n' and self.ct != '\n' and not self.mismatch:
             # HTML line breaks > add line break to text
             self.text_new += self.ch
             self.xhtml_new += self.ch
             self.html_offset += 1
             return True
-        elif self.ct == '\n' and not self.ch == '\n' and not self.mismatch:
+        elif self.ct == '\n' and self.ch != '\n' and not self.mismatch:
             # Text line breaks > add line break to HTML
             self._keep_next_html_tag()
             return False
-        elif self.ch == '-' and not self.ct == '-' and not self.mismatch:
-            # Handling of layout error when a headline repeats on every 
+        elif self.ch == '-' and self.ct != '-' and not self.mismatch:
+            # Handling of layout error when a headline repeats on every
             # page and is somewhere inside the text with hyphenation
             self.text_new += self.ch
             self.xhtml_new += self.ch
@@ -709,20 +638,27 @@ class Fitzpage():
             # Observed in Alien PDFs in the TOC
             self.text_new += self.ch
             self.xhtml_new += self.ch
-        elif self.ch == '※' and self.ct =='\xad':
+        elif self.ch == '※' and self.ct == '\xad':
             # Replacement for a soft hyphen
             # Nothing must be done here, these should not appear
             pass
-        elif self.ch == '⊂' and (self.ct == '\uf0e9' or self.ct == '\uf0ea' or self.ct == '\uf051' or self.ct == '\uf0a1' or self.ct == '\uf04e'):
+        elif self.ch == '⊂' and (self.ct == '\uf0e9'
+                                 or self.ct == '\uf0ea'
+                                 or self.ct == '\uf051'
+                                 or self.ct == '\uf0a1'
+                                 or self.ct == '\uf04e'):
             # Replacement for a private symbol that could be anything
+            # Typically used for map markers
             self.text_new += '.'
             self.xhtml_new += '.'
-        elif not self.ch == self.ct and not self.mismatch:
+        elif self.ch != self.ct and not self.mismatch:
             # ! This is a fallback bechanism to keep the text untouched
+            # ! in case of a mismatch. The mismatch can happen when the
+            # ! order of text blocks is different or if there are
+            # ! unhandled unicode characters in the XHTML code
             # Handling of a single quote:
             checks_failed = False
-            if self.ch == '&' and self.ct == "'":
-                # ! This can run out of range!!
+            if self.ch == '&' and self.ct == "'" and self.i_html+6 < len(self.xhtml):
                 next_chars = self.xhtml[self.i_html:self.i_html+6]
                 if next_chars == '&apos;':
                     self.html_offset += 5
@@ -733,9 +669,9 @@ class Fitzpage():
             else:
                 checks_failed = True
             if checks_failed:
-                self.log.critical('Mismatch between text and HTML content at '+
-                            'text index %d and XHTML index %d',
-                            self.i_text, self.i_html)
+                self.log.critical('Mismatch between text and HTML content at ' +
+                                  'text index %d and XHTML index %d',
+                                  self.i_text, self.i_html)
                 self.mismatch = True
                 self.text_new += self.ct
                 self.xhtml_new += self.ch
@@ -770,7 +706,7 @@ class Fitzpage():
         self.text_new += self.ct
         self.xhtml_new += self.ct
 
-    def _keep_html_tag(self, html_len:int):
+    def _keep_html_tag(self, html_len: int):
         """
         _keep_html_tag recovers the HTML tag for the current character
 
@@ -779,7 +715,7 @@ class Fitzpage():
         """
         if self.ch == '<':
             search_tag_close = False
-            for ci in range(self.i_html,html_len):
+            for ci in range(self.i_html, html_len):
                 self.ch = self.xhtml[ci]
                 if self.ch == '<' or search_tag_close:
                     self.xhtml_new += self.ch
@@ -790,7 +726,7 @@ class Fitzpage():
                 if self.ch == '>':
                     search_tag_close = False
 
-    def _xhtml_line_breaks_assemble_html(self, splithtml:list):
+    def _xhtml_line_breaks_assemble_html(self, splithtml: list):
         """
         _xhtml_line_breaks_assemble_html takes the output of 
         _xhtml_line_beraks_recover_breaks() to re-assemble the HTML code 
@@ -818,11 +754,13 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_xhtml_line_breaks"')
         if not self._check_xhtml_data():
-            self.log.error('No xhtml data available, aborting fix_xhtml_line_breaks')
+            self.log.error(
+                'No xhtml data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
         # Text needed later, for empty page the process can be stopped here
         if not self._check_text_data():
-            self.log.error('No text data available, aborting fix_xhtml_line_breaks')
+            self.log.error(
+                'No text data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
 
         # self._xhtml_line_breaks_text_processing()
@@ -855,7 +793,8 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_xhtml_utf_characters"')
         if not self._check_xhtml_data():
-            self.log.error('No xhtml data available, aborting fix_xhtml_utf_characters')
+            self.log.error(
+                'No xhtml data available, aborting fix_xhtml_utf_characters')
             return self.xhtml
         # Replacements: https://de.wikipedia.org/wiki/Hilfe:Sonderzeichenreferenz
         self.xhtml = self.xhtml.replace('&amp;', '&')
@@ -1145,8 +1084,10 @@ class Fitzpage():
         self.xhtml = self.xhtml.replace('&#x18f;', 'Ə')
         self.xhtml = self.xhtml.replace('&#x2752;', '❒')
         self.xhtml = self.xhtml.replace('&#x141;', 'Ł')
-        self.xhtml = self.xhtml.replace('&#xad;', '※')  # This is a soft-hyphen but needs a symbol to handle it during paragraph recovery
-        self.xhtml = self.xhtml.replace('&#xf0e9;', '⊂')  # Private use, could be anything, replaced during paragraph recovery
+        # This is a soft-hyphen but needs a symbol to handle it during paragraph recovery
+        self.xhtml = self.xhtml.replace('&#xad;', '※')
+        # Private use, could be anything, replaced during paragraph recovery
+        self.xhtml = self.xhtml.replace('&#xf0e9;', '⊂')
         # Private use, could be anything, replaced during paragraph recovery
         self.xhtml = self.xhtml.replace('&#xf0ea;', '⊂')
         self.xhtml = self.xhtml.replace('&#xf051;', '⊂')
@@ -1180,12 +1121,12 @@ class Fitzpage():
         self.log.debug('Entering method "_check_xhtml_data"')
         check_success = False
         if self.xhtml == '':
-            self.log.warning('No text detected in xhtml format, '+
+            self.log.warning('No text detected in xhtml format, ' +
                              'attempting to extract text as xhtml')
             self.get_xhtml()
             check_success = True
             if self.xhtml == '':
-                self.log.error('Could not extract any text in xhtml format '+
+                self.log.error('Could not extract any text in xhtml format ' +
                                'from page %s with index %s',
                                self.pagenumber, self.index)
                 check_success = False
