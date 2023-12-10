@@ -25,6 +25,8 @@ class Fitzdoc():
             return
         self.toc = []
         self.repeating_text_to_remove = []
+        self.html = ''
+        self.text = ''
 
     def check_encryption(self):
         """
@@ -77,13 +79,15 @@ class Fitzdoc():
         """
         self.log.debug('Entering method "process_pages"')
         self.page_text = []
-        html = ''
+        self.html = ''
+        self.text = ''
         for pn, page in enumerate(self.doc):
             p = Fitzpage(page, pn+page_offset)
             content = self.extract_text_from_page(p)
             self.page_text.append(content)
-            html += content
-        return html
+            self.html += content
+            self.text += p.text
+        return self.html
 
     def process_pages_separately(self, page_offset:int):
         """
@@ -99,14 +103,19 @@ class Fitzdoc():
         """
         self.log.debug('Entering method "process_pages_separately"')
         self.page_text = []
-        html = ''
+        self.html = ''
+        self.text = ''
         for pn, page in enumerate(self.doc):
             p = Fitzpage(page, pn+page_offset)
             content = self.extract_text_from_page(p)
             self.page_text.append(content)
-            html += f'\n\n<h1>====== Page {pn+page_offset:04d} ======</h1>\n\n'
-            html += content
-        return html
+            if content:
+                self.html += f'\n\n<h1>====== Page {pn+page_offset:04d} ======</h1>\n\n'
+                self.html += content
+            if p.text:
+                self.text += f'\n\n====== Page {pn+page_offset:04d} ======\n\n'
+                self.text += p.text
+        return self.html
 
     def extract_text_from_page(self, page:Fitzpage):
         """
