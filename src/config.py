@@ -1,17 +1,21 @@
 """
  pathlib for file access
  json for formatting
+ pdffiles for adding and removing PDF files
 """
 from pathlib import Path
 import json
 from pdffiles import PDFFiles
 
+
 class Settings:
     """
      Helper class to turn a dictionary into an object hierarchy
     """
-    def __init__(self, settings:dict):
+
+    def __init__(self, settings: dict):
         self.__dict__.update(settings)
+
 
 class Config():
     """
@@ -89,7 +93,7 @@ class Config():
         """
         answer = ''
         while 1:
-            answer = input('\n' + 
+            answer = input('\n' +
                            '(1) Run PDF extraction\n' +
                            '(2) Input settings\n' +
                            '(3) Output settings\n' +
@@ -365,11 +369,13 @@ class Config():
                 case '2':
                     if self.co.fitz.images.write_page_images:
                         page_extract = 'Extract images from each page'
-                        print('Disabled extraction of images from each page of the document')
+                        print(
+                            'Disabled extraction of images from each page of the document')
                         self.co.fitz.images.write_page_images = False
                     else:
                         page_extract = 'Do not extract images from each page'
-                        print('Enabled extraction of images from each page of the document')
+                        print(
+                            'Enabled extraction of images from each page of the document')
                         self.co.fitz.images.write_page_images = True
                     answer = ''
                 case '3':
@@ -404,10 +410,10 @@ class Config():
         files = PDFFiles()
         answer = ''
         while 1:
-            answer = input('\nSpecify the path to a directory with ' +\
-                           'PDF files. It can be absolute or relative to ' +\
-                           'the current working directory.\n' +\
-                           'Subdirectories will be processed, too.\n' +\
+            answer = input('\nSpecify the path to a directory with ' +
+                           'PDF files. It can be absolute or relative to ' +
+                           'the current working directory.\n' +
+                           'Subdirectories will be processed, too.\n' +
                            'Just type q to return to the previous menu.\n')
             if answer.lower() == 'q':
                 return True
@@ -433,9 +439,9 @@ class Config():
         files = PDFFiles()
         answer = ''
         while 1:
-            answer = input('\nSpecify the path to a PDF file. It can be ' +\
-                           'an absolute or relative path to the current ' +\
-                           'working directory.\n' +\
+            answer = input('\nSpecify the path to a PDF file. It can be ' +
+                           'an absolute or relative path to the current ' +
+                           'working directory.\n' +
                            'Just type q to return to the previous menu.\n')
             if answer.lower() == 'q':
                 return True
@@ -461,8 +467,8 @@ class Config():
         while 1:
             print('\nFiles marked for processing:')
             files.list_files()
-            answer = input('\nSpecify the full path for the file that should ' +\
-                           'be removed from the list.\n' +\
+            answer = input('\nSpecify the full path for the file that should ' +
+                           'be removed from the list.\n' +
                            'Just type q to return to the previous menu.\n')
             if answer.lower() == 'q':
                 return True
@@ -480,10 +486,11 @@ class Config():
         """
         answer = ''
         while 1:
-            answer = input('\nSpecify the path to a directory for saving ' +\
-                           'the output files. It can be an absolute or ' +\
-                           'relative path.\n' +\
+            answer = input('\nSpecify the path to a directory for saving ' +
+                           'the output files. It can be an absolute or ' +
+                           'relative path.\n' +
                            'Just type q to return to the previous menu.\n')
+            print('\n\nWARNING! This setting has no effect!!\n\n')
             if answer.lower() == 'q':
                 return True
             wd = Path(answer).absolute()
@@ -503,9 +510,9 @@ class Config():
         """
         answer = ''
         while 1:
-            answer = input('\nSpecify the offset for PDF and book page ' +\
-                           'numbers. The first page is "0". If the pdf ' +\
-                           'page 5 shows the number 6, the offset is 2.\n' +\
+            answer = input('\nSpecify the offset for PDF and book page ' +
+                           'numbers. The first page is "0". If the pdf ' +
+                           'page 5 shows the number 6, the offset is 2.\n' +
                            'Just type q to return to the previous menu.\n')
             if answer.lower() == 'q':
                 return True
@@ -520,6 +527,17 @@ class Config():
             return True
 
     def tui_repeating_text(self):
+        """
+        tui_repeating_text not implemented!
+        Should be a new menu to define:
+        Attempt removing repeating headlines
+        Attempt removing document title
+        Attempt removing watermark
+        Detect repeating text (with warning)
+
+        :return: True to return to the previous menu without aborting
+        :rtype: bool
+        """
         print('Method not implemented')
         return True
 
@@ -533,9 +551,9 @@ class Config():
         """
         answer = ''
         while 1:
-            answer = input('\nSpecify the minimum file size for embedded ' +\
-                           'images in Byte as integer number.\n' +\
-                           'Default value: 5000\n' +\
+            answer = input('\nSpecify the minimum file size for embedded ' +
+                           'images in Byte as integer number.\n' +
+                           'Default value: 5000\n' +
                            'Just type q to return to the previous menu.\n')
             if answer.lower() == 'q':
                 return True
@@ -559,9 +577,9 @@ class Config():
         """
         answer = ''
         while 1:
-            answer = input('\nSpecify the minimum image dimension in X ' +\
-                           'in Pixel.\n' +\
-                           'Default value: 130\n' +\
+            answer = input('\nSpecify the minimum image dimension in X ' +
+                           'in Pixel.\n' +
+                           'Default value: 130\n' +
                            'Just type q to return to the previous menu.\n')
             if answer.lower() == 'q':
                 return True
@@ -624,9 +642,11 @@ class Config():
                 print(e)
                 continue
             self.co.fitz.images.image_compression_limit = answer
-            print(f'\nNew offset: ' +\
-                  f'{self.co.fitz.images.image_compression_limit}')
+            print('\nNew offset:', self.co.fitz.images.image_compression_limit)
             return True
 
     def evaluate_args(self):
-        pass
+        """
+        evaluate_args evaluate arguments from main function
+        """
+        print("Method not implemented")
