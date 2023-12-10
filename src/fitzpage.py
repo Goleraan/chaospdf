@@ -71,7 +71,7 @@ class Fitzpage():
                                        fitz.TEXT_DEHYPHENATE,
                                        sort=sorting)
         if self.text == '':
-            self.log.error('Could not detect any text in plain text ' +
+            self.log.warning('Could not detect any text in plain text ' +
                            'format on page %s with index %s',
                            self.pagenumber, self.index)
         self.executed['get_plain_text'] = True
@@ -100,7 +100,7 @@ class Fitzpage():
             #     continue
             self.textblocks.append(block[4].replace('\n', ''))
         if len(self.textblocks) == 0:
-            self.log.error('Could not detect any text in block format ' +
+            self.log.warning('Could not detect any text in block format ' +
                            'on page %s with index %s, attempting to get plain text',
                            self.pagenumber, self.index)
             self.get_plain_text(sorting)
@@ -265,7 +265,7 @@ class Fitzpage():
                                  self.pagenumber, self.index)
                 self.get_plain_text(False)
                 if self.text == '':
-                    self.log.error('Could not extract any text in plain ' +
+                    self.log.warning('Could not extract any text in plain ' +
                                    'text format from page %s with index %s',
                                    self.pagenumber, self.index)
                     check_success = False
@@ -329,7 +329,7 @@ class Fitzpage():
         #                                                 fitz.TEXT_PRESERVE_WHITESPACE+
         #                                                 fitz.TEXT_DEHYPHENATE)
         if self.xhtml == '':
-            self.log.error('Could not detect any text in xhtml format ' +
+            self.log.warning('Could not detect any text in xhtml format ' +
                            'on page %s with index %s',
                            self.pagenumber, self.index)
             return self.xhtml
@@ -356,7 +356,7 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_xhtml_ligature_spaces"')
         if not self._check_xhtml_data():
-            self.log.error(
+            self.log.warning(
                 'No xhtml data available, aborting fix_xhtml_ligature_spaces')
             return self.xhtml
         self.log.warning('It is recommended to run fix_xhtml_utf_characters ' +
@@ -389,7 +389,7 @@ class Fitzpage():
         # probably easier to do within get_xhtml()
         self.log.debug('Entering method "remove_text_repeating"')
         if not self._check_xhtml_data():
-            self.log.error(
+            self.log.warning(
                 'No xhtml data available, aborting remove_xhtml_repeating')
             return self.xhtml
         self.xhtml = self.xhtml.replace(text+'\n', '')
@@ -419,7 +419,7 @@ class Fitzpage():
         """
         self.log.debug('Entering method "remove_xhtml_page_number"')
         if not self._check_xhtml_data():
-            self.log.error(
+            self.log.warning(
                 'No xhtml data available, aborting remove_xhtml_page_number')
             return self.xhtml
         xhtml = ''
@@ -754,12 +754,12 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_xhtml_line_breaks"')
         if not self._check_xhtml_data():
-            self.log.error(
+            self.log.warning(
                 'No xhtml data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
         # Text needed later, for empty page the process can be stopped here
         if not self._check_text_data():
-            self.log.error(
+            self.log.warning(
                 'No text data available, aborting fix_xhtml_line_breaks')
             return self.xhtml
 
@@ -793,7 +793,7 @@ class Fitzpage():
         """
         self.log.debug('Entering method "fix_xhtml_utf_characters"')
         if not self._check_xhtml_data():
-            self.log.error(
+            self.log.warning(
                 'No xhtml data available, aborting fix_xhtml_utf_characters')
             return self.xhtml
         # Replacements: https://de.wikipedia.org/wiki/Hilfe:Sonderzeichenreferenz
@@ -1126,7 +1126,7 @@ class Fitzpage():
             self.get_xhtml()
             check_success = True
             if self.xhtml == '':
-                self.log.error('Could not extract any text in xhtml format ' +
+                self.log.warning('Could not extract any text in xhtml format ' +
                                'from page %s with index %s',
                                self.pagenumber, self.index)
                 check_success = False
