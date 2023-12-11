@@ -39,7 +39,7 @@ class Outfile():
         else:
             self.log.warning('Output directory exists already: %s',
                           self.location)
-    
+
     def save_text(self, text:str, ext:str):
         """
         save_text saves a string as UTF-8 encoded text file
@@ -57,7 +57,7 @@ class Outfile():
             with open(outfile, 'w', encoding='utf-8') as fp:
                 fp.write(text)
                 self.log.info('File "%s" saved', outfile)
-        except(OSError):
+        except OSError:
             print('Error (over)writing the file', outfile)
             self.log.error('Could not write file "%s"', outfile)
 
