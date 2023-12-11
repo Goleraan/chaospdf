@@ -21,11 +21,16 @@ class Outfile():
         self.basename = input_file.stem
         if self.config.fitz.export.use_pdf_output_dir:
             if self.config.fitz.export.create_sub_dirs:
-                self.location = Path(input_file.absolute().parent, self.basename)
+                self.location = Path(input_file.absolute().parent,
+                                     self.basename)
             else:
                 self.location = Path(input_file.absolute().parent)
         else:
-            self.location = Path(self.config.fitz.export.output_dir)
+            if self.config.fitz.export.create_sub_dirs:
+                self.location = Path(self.config.fitz.export.output_dir,
+                                     self.basename)
+            else:
+                self.location = Path(self.config.fitz.export.output_dir)
 
     def create_directory(self):
         """
@@ -71,7 +76,7 @@ class Outfile():
         :type imgname: str
         """
         self.log.debug('Entering method "save_fitz_image"')
-        if self.config.fitz.export.use_pdf_output_dir:
+        if self.config.fitz.export.create_sub_dirs:
             self.create_directory()
         outfile = Path(self.location, imgname)
         with open(outfile, 'wb') as fp:
