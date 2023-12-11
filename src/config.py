@@ -238,7 +238,7 @@ class Config():
                                   'numbers from the text'
         else:
             remove_page_numbers = 'Attempt to remove the page numbers ' +\
-                                  'from the text'
+                                  'from HTML'
         while 1:
             answer = input('\n' +
                            '(1) ' + write_html + '\n' +
@@ -308,13 +308,13 @@ class Config():
                 case '6':
                     if self.co.fitz.text.remove_page_numbers:
                         remove_page_numbers = 'Attempt to remove the page ' +\
-                                              'numbers from the text'
-                        print('Disabled removal of page numbers from extracted text')
+                                              'numbers from HTML'
+                        print('Disabled removal of page numbers from extracted HTML')
                         self.co.fitz.text.remove_page_numbers = False
                     else:
                         remove_page_numbers = 'Do not attempt to remove the ' +\
-                                              'page numbers from the text'
-                        print('Enabled removal of page numbers from extracted text')
+                                              'page numbers from HTML'
+                        print('Enabled removal of page numbers from extracted HTML')
                         self.co.fitz.text.remove_page_numbers = True
                     answer = ''
                 case '7':
@@ -378,6 +378,7 @@ class Config():
                             'Enabled extraction of images from each page of the document')
                         self.co.fitz.images.write_page_images = True
                     answer = ''
+                    print('\n\n*** This setting has no effect! ***\n\n')
                 case '3':
                     if not self.tui_min_img_size():
                         return False
