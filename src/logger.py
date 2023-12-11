@@ -34,7 +34,7 @@ class Logger():
                                     'file': {'class': 'logging.FileHandler',
                                              'formatter': 'default_format',
                                              'filename': f'{Path(self.logpath, "chaospdf.log")}',
-                                             'level': 'DEBUG'}},
+                                             'level': logging.INFO}},
                        'loggers': {'root': {'handlers': ['console', 'file']},
                                    'main': {'handlers': ['console', 'file'],
                                             'propagate': False},
