@@ -8,15 +8,18 @@ import logging
 from config import Config
 
 class PDFFiles():
+    """
+    PDFFiles provides methods to handle file paths and lists.
+    """
     filelist = []
     check_success = False
 
-    def __init__(self):
+    def __init__(self, cfg:Config):
         self.log = logging.getLogger('file')  # Log to console and file
         self.logf = logging.getLogger('filef')  # Log to file only
         self.log.info('Initializing file handling')
         self.working_directory = Path('.')
-        self.config = Config().co
+        self.cfg = cfg
 
     def check_files(self):
         """
@@ -73,7 +76,7 @@ class PDFFiles():
                 self.log.warning('File "%s" is in the list already', file)
             else:
                 self.filelist.append(file.absolute())
-                self.config.input.input_files.append(str(file.absolute()))
+                self.cfg.cfg.input.input_files.append(str(file.absolute()))
                 self.log.info('Added file "%s" to filelist', file)
             add_success = True
         else:
@@ -94,11 +97,23 @@ class PDFFiles():
         remove_success = False
         if file.absolute() in self.filelist:
             self.filelist.remove(file.absolute())
+            print(f'Trying to remove {file.absolute()}')
+            if str(file.absolute()) in self.cfg.cfg.input.input_files:
+                self.cfg.cfg.input.input_files.remove(str(file.absolute()))
+            else:
+                print('Something went wrong!!!')
+                print('Files in pdffiles:')
+                self.list_files()
+                print('\nFiles in config:')
+                for item in self.cfg.cfg.input.input_files:
+                    print(item)
             remove_success = True
             self.log.info('Removed File "%s" from the list', file)
         else:
             if file in self.filelist:
-                self.log.error('File "%s" exists in the list but at a different location, did not remove file', file)
+                self.log.error('File "%s" exists in the list but at a ' +
+                               'different location, did not remove file',
+                               file)
                 remove_success = False
             else:
                 self.log.warning('File "%s" does not exist in the list', file)

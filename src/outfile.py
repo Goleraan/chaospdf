@@ -14,23 +14,23 @@ class Outfile():
     Outfile has methods for output file handling while considering the
     program settings.
     """
-    def __init__(self, input_file:Path):
+    def __init__(self, input_file:Path, cfg:Config):
         self.log = logging.getLogger('file')
         self.log.debug('Startung outfiles initialization')
-        self.config = Config().co
+        self.cfg = cfg
         self.basename = input_file.stem
-        if self.config.fitz.export.use_pdf_output_dir:
-            if self.config.fitz.export.create_sub_dirs:
+        if self.cfg.cfg.fitz.export.use_pdf_output_dir:
+            if self.cfg.cfg.fitz.export.create_sub_dirs:
                 self.location = Path(input_file.absolute().parent,
                                      self.basename)
             else:
                 self.location = Path(input_file.absolute().parent)
         else:
-            if self.config.fitz.export.create_sub_dirs:
-                self.location = Path(self.config.fitz.export.output_dir,
+            if self.cfg.cfg.fitz.export.create_sub_dirs:
+                self.location = Path(self.cfg.cfg.fitz.export.output_dir,
                                      self.basename)
             else:
-                self.location = Path(self.config.fitz.export.output_dir)
+                self.location = Path(self.cfg.cfg.fitz.export.output_dir)
 
     def create_directory(self):
         """
@@ -55,7 +55,7 @@ class Outfile():
         :type ext: str
         """
         self.log.debug('Entering method "save_text"')
-        if self.config.fitz.export.use_pdf_output_dir:
+        if self.cfg.cfg.fitz.export.use_pdf_output_dir:
             self.create_directory()
         outfile = Path(self.location, self.basename+'.'+ext)
         try:
@@ -76,7 +76,7 @@ class Outfile():
         :type imgname: str
         """
         self.log.debug('Entering method "save_fitz_image"')
-        if self.config.fitz.export.create_sub_dirs:
+        if self.cfg.cfg.fitz.export.create_sub_dirs:
             self.create_directory()
         outfile = Path(self.location, imgname)
         with open(outfile, 'wb') as fp:

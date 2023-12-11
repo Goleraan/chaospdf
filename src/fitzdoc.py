@@ -1,6 +1,5 @@
 """
  pathlib to access PDF files (in pdffiles)
- os for image output
  logging for logging and debugging
  re for analyzing text with regular expressions
  collections for finding unique items of lists
@@ -10,7 +9,6 @@
  outfile for image output
 """
 from pathlib import Path
-import os
 import logging
 import re
 from collections import Counter
@@ -20,7 +18,12 @@ from config import Config
 from outfile import Outfile
 
 class Fitzdoc():
-    def __init__(self, file:Path):
+    """
+    Fitzdoc handles PDF documents as a whole.
+    Calls Fitzpage for accessing page content.
+    Image extraction is on document level.
+    """
+    def __init__(self, file:Path, cfg:Config):
         self.log = logging.getLogger('doc')
         self.log.info('Initializing document for "%s"', file)
         self.file = file
@@ -35,7 +38,7 @@ class Fitzdoc():
         self.repeating_text_to_remove = []
         self.html = ''
         self.text = ''
-        self.config = Config().co
+        self.cfg = cfg
 
     def check_encryption(self):
         """
@@ -174,7 +177,7 @@ class Fitzdoc():
         if self.repeating_text_to_remove:
             for text in self.repeating_text_to_remove:
                 page.remove_xhtml_repeating(text)
-        if self.config.fitz.text.remove_page_numbers:
+        if self.cfg.cfg.fitz.text.remove_page_numbers:
             page.remove_xhtml_page_number()
         return page.xhtml
 
@@ -256,7 +259,7 @@ class Fitzdoc():
         Some parts are rewritten for the purpose of this method.
         """
         self.log.debug('Entering method "extract_images"')
-        outfile = Outfile(self.file)
+        outfile = Outfile(self.file, self.cfg)
         output_dir = outfile.location
         #
         xref_count = self.doc.xref_length()
@@ -301,11 +304,11 @@ class Fitzdoc():
             height = imgdict['height']
             imgsize = len(imgdata)
             #
-            if width <= self.config.fitz.images.image_dimension_x_min or\
-               height <= self.config.fitz.images.image_dimension_y_min:
+            if width <= self.cfg.cfg.fitz.images.image_dimension_x_min or\
+               height <= self.cfg.cfg.fitz.images.image_dimension_y_min:
                 # Skip image if an edge is too small
                 continue
-            if imgsize < self.config.fitz.images.image_size_min:
+            if imgsize < self.cfg.cfg.fitz.images.image_size_min:
                 # Skip image if its total file size is too small
                 continue
             #
@@ -325,7 +328,7 @@ class Fitzdoc():
                 # There is no soft mask, no recovery needed
                 samplesize = width * height * max(1, imgdict['colorspace'])
             #
-            if imgsize / samplesize <= self.config.fitz.images.compression_limit:
+            if imgsize / samplesize <= self.cfg.cfg.fitz.images.compression_limit:
                 # Skip image if it's compressed to less than 5% (compression_limit) of its full size
                 # These are typically unicolor images that are of no interest
                 continue

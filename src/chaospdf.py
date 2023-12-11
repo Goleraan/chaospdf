@@ -9,6 +9,7 @@ from fitzdoc import Fitzdoc
 from fitzpage import Fitzpage
 from outfile import Outfile
 from config import Config
+from tui import TUI
 
 
 def main(**args):
@@ -17,40 +18,40 @@ def main(**args):
     log = Logger()  # Initialization is necessary, might not be needed to assign to variable, though
     mainlog = logging.getLogger('main')
     mainlog.info('Start extraction session')
-    files = PDFFiles()
-    files.set_working_directory(Path('.'))
+    cfg = Config()
+    files = PDFFiles(cfg)
+    files.set_working_directory(Path('..'))
     files.search_files()
     # files.list_files()
-    config = Config()
-    # print(config.co.fitz.export.output_dir)
-    # print(config.co.fitz.__dict__)
-    if not config.tui():
+    # print(cfg.cfg.fitz.export.output_dir)
+    # print(cfg.cfg.fitz.__dict__)
+    if not TUI(cfg).tui():
         print('\nNo files processed\n')
         return
-    print('If you see error messages, check the log file for more details')
+    print('If you see error messages, check the log file for more context')
     # config.print_config()
     for file in files.filelist:
-        doc = Fitzdoc(file)
-        out = Outfile(file)
+        doc = Fitzdoc(file, cfg)
+        out = Outfile(file, cfg)
         # Page offset
-        if config.co.fitz.text.detect_page_offset:
+        if cfg.cfg.fitz.text.detect_page_offset:
             offset = doc.detect_page_offset()
         else:
-            offset = config.co.fitz.text.page_offset
+            offset = cfg.cfg.fitz.text.page_offset
         # Extract HTML and text
-        if config.co.fitz.text.page_separator:
+        if cfg.cfg.fitz.text.page_separator:
             doc.process_pages_separately(offset)
         else:
             doc.process_pages(offset)
         # Write HTML and text files
-        if config.co.fitz.export.write_html:
+        if cfg.cfg.fitz.export.write_html:
             out.save_text(doc.html, 'html')
-        if config.co.fitz.export.write_text:
+        if cfg.cfg.fitz.export.write_text:
             out.save_text(doc.text, 'txt')
-        if config.co.fitz.export.write_toc:
+        if cfg.cfg.fitz.export.write_toc:
             out.save_text(doc.process_toc(offset), 'toc.txt')
         # Write images
-        if config.co.fitz.images.write_doc_images:
+        if cfg.cfg.fitz.images.write_doc_images:
             doc.extract_images()
         # return
         #
