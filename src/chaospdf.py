@@ -53,31 +53,6 @@ def main(**args):
         # Write images
         if cfg.cfg.fitz.images.write_doc_images:
             doc.extract_images()
-        # return
-        #
-        # doc.print_file_info()
-        # page = Fitzpage(doc.doc[45], 45)
-        #
-        # page.get_block_text(False)
-        # page.fix_text_ligature_spaces()
-        # page.fix_text_line_breaks()
-        # page.remove_text_page_number()
-        # page.remove_text_repeating('DAS VERLASSENE BERGDORF')
-        # page.remove_text_repeating('Die Träumer von Kaliyama')
-        # print(page.text)
-        #
-        # page.get_xhtml()
-        # page.fix_xhtml_utf_characters()
-        # page.fix_xhtml_line_breaks()
-        # page.remove_xhtml_repeating('Die Träumer von Kaliyama')
-        # page.remove_xhtml_repeating('DAS VERLASSENE BERGDORF')
-        # page.remove_xhtml_page_number()
-        # print(page.xhtml)
-        #
-        # page.get_dict_text()
-        # print(page.dicttext)
-        #
-        # page.get_images()
     mainlog.info('End extraction session')
     # Cleanup log
 
