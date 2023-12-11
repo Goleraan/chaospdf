@@ -21,7 +21,7 @@ The tool is experimental. Most of its intended features are implemented but are 
 - Batch processing of a large number of PDF files
 
 ## Usage instructions
-- Either download the source code to run with Python or the Windows exe file
+- Either download the source code to run with Python or the Windows exe file from the releases
 - For source code:
   - Using a virtual environment is highly recommended
   - Download all files from the src folder
