@@ -1,8 +1,11 @@
 """
  pathlib to find and access PDF files
+ logging for logging
+ config for program configuration
 """
 from pathlib import Path
 import logging
+from config import Config
 
 class PDFFiles():
     filelist = []
@@ -13,6 +16,7 @@ class PDFFiles():
         self.logf = logging.getLogger('filef')  # Log to file only
         self.log.info('Initializing file handling')
         self.working_directory = Path('.')
+        self.config = Config().co
 
     def check_files(self):
         """
@@ -69,6 +73,7 @@ class PDFFiles():
                 self.log.warning('File "%s" is in the list already', file)
             else:
                 self.filelist.append(file.absolute())
+                self.config.input.input_files.append(str(file.absolute()))
                 self.log.info('Added file "%s" to filelist', file)
             add_success = True
         else:
