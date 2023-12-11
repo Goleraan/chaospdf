@@ -222,11 +222,9 @@ class Fitzdoc():
         
         Some parts are rewritten for the purpose of this method.
         """
-        # self.status_output = False
+        self.log.debug('Entering method "extract_images"')
         outfile = Outfile(self.file)
         output_dir = outfile.location
-        # if self.status_output:
-        #     print('Starting image extraction for file', self.doc.name)
         #
         xref_count = self.doc.xref_length()
         softmasks = set()
@@ -236,11 +234,6 @@ class Fitzdoc():
         recover_count = 0
         remove_count = 0
         #
-        if not Path(output_dir).exists():
-            Path(output_dir).mkdir(parents=True)
-            # if self.status_output:
-            #     print('Created output directory', str(Path(output_dir)))
-        #
         # Loop over all cross references of the document
         for xref in range(1, xref_count):
             try:
@@ -248,8 +241,7 @@ class Fitzdoc():
                     # Skip all cross references that are not images
                     continue
             except RuntimeError as e:
-                print('Error during image extraction\n')
-                print(e)
+                self.log.error('Error during image extraction for xref %s:\n%s', xref, e)
                 continue
 
             total_img_count += 1
@@ -313,22 +305,16 @@ class Fitzdoc():
         # Remove all soft masks that were written as image file because they slipped
         # through the previous filter process
         if len(softmasks) > 0:
-            filelist = os.listdir(output_dir)
-            for softmask in softmasks:
-                img = str(softmask)
-                for fp in filelist:
-                    if fp.startswith(img) and Path(output_dir, fp).exists():
-                        Path(output_dir, fp).unlink()
-                        remove_count += 1
+            remove_count = outfile.remove_fitz_softmasks(softmasks)
         #
-        # if self.status_output:
-        #     print('Detected cross references:', xref_count)
-        #     print('Detected images:', total_img_count)
-        #     print('Detected soft mask images:', softmask_count)
-        #     print('Detected relevant images:', img_count)
-        #     print('Recovered transparency with soft masks:', recover_count)
-        #     print('Cleanup of slipped soft masks:', remove_count)
-        #     print('Finished image extraction for', self.doc.name)
+        self.log.debug('Detected cross references: %d', xref_count)
+        self.log.debug('Detected images: %d', total_img_count)
+        self.log.debug('Detected soft mask images: %d', softmask_count)
+        self.log.debug('Detected relevant images: %d', img_count)
+        self.log.debug('Recovered transparency with soft masks: %d',
+                       recover_count)
+        self.log.debug('Cleanup of slipped soft masks: %d', remove_count)
+        self.log.debug('Finished image extraction for %s', self.doc.name)
 
     def recover_picture(self, doc:fitz.Document, imgdict):
         """Code from: https://github.com/pymupdf/PyMuPDF-Utilities/blob/master/examples/extract-images/extract-from-xref.py
@@ -348,6 +334,7 @@ class Fitzdoc():
         Returns:
             dict: Updated dictionary for an image that includes the alpha channel information.
         """
+        self.log.debug('Entering method "recover_picture"')
         smask = imgdict['smask']
 
         try:
@@ -359,5 +346,6 @@ class Fitzdoc():
             else:
                 ext = 'png'
             return {'ext': ext, 'colorspace': pix.colorspace.n, 'image': pix.tobytes(ext)}
-        except:
+        except Exception as e:
+            self.log.error('Image recovery failed with:\n%s', e)
             return None

@@ -1,10 +1,12 @@
 """
  pathlib to access the file system
  logging for log files
+ os for file system access
  config for program settings
 """
 from pathlib import Path
 import logging
+import os
 from config import Config
 
 class Outfile():
@@ -68,9 +70,28 @@ class Outfile():
         :param imgname: Filename
         :type imgname: str
         """
+        self.log.debug('Entering method "save_fitz_image"')
         if self.config.fitz.export.use_pdf_output_dir:
             self.create_directory()
         outfile = Path(self.location, imgname)
         with open(outfile, 'wb') as fp:
             fp.write(imgdata)
 
+    def remove_fitz_softmasks(self, softmasks:list):
+        """
+        remove_fitz_softmasks deletes all remaining softmask files.
+
+        :param softmasks: List of softmask filenames
+        :type softmasks: list
+        :return: Number of removed files
+        :rtype: int
+        """
+        filelist = os.listdir(self.location)
+        remove_count = 0
+        for softmask in softmasks:
+            img = str(softmask)
+            for fp in filelist:
+                if fp.startswith(img) and Path(self.location, fp).exists():
+                    Path(self.location, fp).unlink()
+                    remove_count += 1
+        return remove_count
