@@ -1,7 +1,10 @@
-"""Required standard modules:
-     logging for configuration of loggers
-     json for reading and writing configuration files
-     pathlib for accessing files
+"""
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
+ logging for configuration of loggers
+ json for reading and writing configuration files
+ pathlib for accessing files
 """
 import logging  # Standard logging module
 import logging.config

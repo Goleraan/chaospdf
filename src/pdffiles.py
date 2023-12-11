@@ -1,4 +1,7 @@
 """
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
  pathlib to find and access PDF files
  logging for logging
  config for program configuration

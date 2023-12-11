@@ -1,4 +1,7 @@
 """
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
  pathlib to access PDF files (in pdffiles)
  logging for logging and debugging
  re for analyzing text with regular expressions

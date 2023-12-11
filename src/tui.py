@@ -1,4 +1,7 @@
 """
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
  pathlib for adding and removing PDF files
  config for program configuration
  pdffiles for adding and removing PDF files
@@ -30,7 +33,8 @@ class TUI:
                            '(3) Output settings\n' +
                            '(4) Text extraction settings\n' +
                            '(5) Image extraction settings\n' +
-                           '(0) Exit\n')
+                           '(0) Exit\n' +
+                           '(c) Copyright and license information\n')
             match answer.lower():
                 case '0':
                     return False
@@ -54,6 +58,8 @@ class TUI:
                     if not self.tui_image():
                         return False
                     answer = ''
+                case 'c':
+                    self.print_license()
                 case _:
                     answer = ''
 
@@ -577,3 +583,29 @@ class TUI:
             self.cfg.cfg.fitz.images.image_compression_limit = answer
             print('\nNew offset:', self.cfg.cfg.fitz.images.image_compression_limit)
             return True
+
+    def print_license(self):
+        """
+        print_license prints rudimentary license information
+        """
+        print()
+        print('ChaosPDF - Text and image extraction from PDF files')
+        print('Copyright (c) 2023  Akram Radwan')
+        print()
+        print('This program is free software: you can redistribute ' +
+              'it and/or modify it under the terms of the GNU General ' +
+              'Public License version 3 as published by the Free ' +
+              'Software Foundation.')
+        print()
+        print('This program is distributed in the hope that it will ' +
+              'be useful, but WITHOUT ANY WARRANTY; without even the ' +
+              'implied warranty of MERCHANTABILITY or FITNESS FOR A ' +
+              'PARTICULAR PURPOSE.  See the GNU General Public License ' +
+              'for more details.')
+        print()
+        print('You should have received a copy of the GNU General Public ' +
+              'License along with this program.')
+        print('If not, see <https://www.gnu.org/licenses/>.')
+        print()
+        print('You can obtain the source code of the program from ' +
+              '<https://github.com/Goleraan/chaospdf>')

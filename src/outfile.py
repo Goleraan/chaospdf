@@ -1,4 +1,7 @@
 """
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
  pathlib to access the file system
  logging for log files
  os for file system access

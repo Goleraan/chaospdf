@@ -1,4 +1,7 @@
 """
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
  logging for logging and debugging
  re for regex replacements
  fitz from pymupdf to process PDF documents

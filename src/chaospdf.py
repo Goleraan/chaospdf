@@ -1,19 +1,31 @@
 # Main file to start the program
-"""Modules tbd"""
+"""
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
+ pathlib for accessing files
+ logging for handling the log file
+ logger for log file configuration
+ pdffiles for handling PDF files and file locations
+ fitzdoc for handling PDF documents with PyMuPDF
+ outfile for output file handling
+ config for a general program configuration
+ tui for the text menu
+"""
+from pathlib import Path
 import logging
 import logging.config
 from logger import Logger
 from pdffiles import PDFFiles
-from pathlib import Path
 from fitzdoc import Fitzdoc
-from fitzpage import Fitzpage
 from outfile import Outfile
 from config import Config
 from tui import TUI
 
 
 def main(**args):
-    print('ChaosPDF extraction tool version 0.1.1')
+    print('ChaosPDF extraction tool version 0.1.2')
+    print('Copyright (c) 2023  Akram Radwan')
     # Initialize logging
     log = Logger()  # Initialization is necessary, might not be needed to assign to variable, though
     mainlog = logging.getLogger('main')

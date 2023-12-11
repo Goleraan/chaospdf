@@ -1,4 +1,7 @@
 """
+ GNU GPL V3
+ (c) 2023 Akram Radwan
+ 
  pathlib for file access
  json for formatting
  pdffiles for adding and removing PDF files
