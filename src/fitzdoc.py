@@ -34,7 +34,7 @@ class Fitzdoc():
         self.repeating_text_to_remove = []
         self.html = ''
         self.text = ''
-        self.config = Config()
+        self.config = Config().co
 
     def check_encryption(self):
         """
@@ -223,7 +223,8 @@ class Fitzdoc():
         Some parts are rewritten for the purpose of this method.
         """
         # self.status_output = False
-        output_dir = Outfile(self.file).location
+        outfile = Outfile(self.file)
+        output_dir = outfile.location
         # if self.status_output:
         #     print('Starting image extraction for file', self.doc.name)
         #
@@ -275,11 +276,11 @@ class Fitzdoc():
             height = imgdict['height']
             imgsize = len(imgdata)
             #
-            if width <= self.config.co.fitz.images.image_dimension_x_min or\
-               height <= self.config.co.fitz.images.image_dimension_y_min:
+            if width <= self.config.fitz.images.image_dimension_x_min or\
+               height <= self.config.fitz.images.image_dimension_y_min:
                 # Skip image if an edge is too small
                 continue
-            if imgsize < self.config.co.fitz.images.image_size_min:
+            if imgsize < self.config.fitz.images.image_size_min:
                 # Skip image if its total file size is too small
                 continue
             #
@@ -299,15 +300,14 @@ class Fitzdoc():
                 # There is no soft mask, no recovery needed
                 samplesize = width * height * max(1, imgdict['colorspace'])
             #
-            if imgsize / samplesize <= self.config.co.fitz.images.compression_limit:
+            if imgsize / samplesize <= self.config.fitz.images.compression_limit:
                 # Skip image if it's compressed to less than 5% (compression_limit) of its full size
                 # These are typically unicolor images that are of no interest
                 continue
             #
             # Write image
             imgname = str(xref) + '.' + extension
-            with open(Path(output_dir, imgname), 'wb') as fp:
-                fp.write(imgdata)
+            outfile.save_fitz_image(imgdata, imgname)
             img_count += 1
         #
         # Remove all soft masks that were written as image file because they slipped

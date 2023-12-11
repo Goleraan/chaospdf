@@ -59,5 +59,18 @@ class Outfile():
             print('Error (over)writing the file', outfile)
             self.log.error('Could not write file "%s"', outfile)
 
-    def save_image(self):
-        pass
+    def save_fitz_image(self, imgdata, imgname):
+        """
+        save_fitz_image saves an image file for PyMuPDF
+
+        :param imgdata: Binary image data extracted from PDF xref
+        :type imgdata: fitz.Pixmap
+        :param imgname: Filename
+        :type imgname: str
+        """
+        if self.config.fitz.export.use_pdf_output_dir:
+            self.create_directory()
+        outfile = Path(self.location, imgname)
+        with open(outfile, 'wb') as fp:
+            fp.write(imgdata)
+
