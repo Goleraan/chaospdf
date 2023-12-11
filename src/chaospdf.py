@@ -12,6 +12,7 @@ from config import Config
 
 
 def main(**args):
+    print('ChaosPDF extraction tool version 0.1.0')
     # Initialize logging
     log = Logger()  # Initialization is necessary, might not be needed to assign to variable, though
     mainlog = logging.getLogger('main')
@@ -26,6 +27,7 @@ def main(**args):
     if not config.tui():
         print('\nNo files processed\n')
         return
+    print('If you see error messages, check the log file for more details')
     # config.print_config()
     for file in files.filelist:
         doc = Fitzdoc(file)
