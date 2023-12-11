@@ -13,14 +13,14 @@ from tui import TUI
 
 
 def main(**args):
-    print('ChaosPDF extraction tool version 0.1.0')
+    print('ChaosPDF extraction tool version 0.1.1')
     # Initialize logging
     log = Logger()  # Initialization is necessary, might not be needed to assign to variable, though
     mainlog = logging.getLogger('main')
     mainlog.info('Start extraction session')
     cfg = Config()
     files = PDFFiles(cfg)
-    files.set_working_directory(Path('..'))
+    files.set_working_directory(Path('.'))
     files.search_files()
     # files.list_files()
     # print(cfg.cfg.fitz.export.output_dir)
