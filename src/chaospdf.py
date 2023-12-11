@@ -39,9 +39,9 @@ def main(**args):
         else:
             doc.process_pages(offset)
         if config.co.fitz.export.write_html:
-            out.save_text(doc.html, '.html')
+            out.save_text(doc.html, 'html')
         if config.co.fitz.export.write_text:
-            out.save_text(doc.text, '.txt')
+            out.save_text(doc.text, 'txt')
         if config.co.fitz.images.write_doc_images:
             doc.extract_images()
         # return
