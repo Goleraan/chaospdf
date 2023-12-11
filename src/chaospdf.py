@@ -30,18 +30,24 @@ def main(**args):
     for file in files.filelist:
         doc = Fitzdoc(file)
         out = Outfile(file)
+        # Page offset
         if config.co.fitz.text.detect_page_offset:
             offset = doc.detect_page_offset()
         else:
             offset = config.co.fitz.text.page_offset
+        # Extract HTML and text
         if config.co.fitz.text.page_separator:
             doc.process_pages_separately(offset)
         else:
             doc.process_pages(offset)
+        # Write HTML and text files
         if config.co.fitz.export.write_html:
             out.save_text(doc.html, 'html')
         if config.co.fitz.export.write_text:
             out.save_text(doc.text, 'txt')
+        if config.co.fitz.export.write_toc:
+            out.save_text(doc.process_toc(offset), 'toc.txt')
+        # Write images
         if config.co.fitz.images.write_doc_images:
             doc.extract_images()
         # return

@@ -31,6 +31,7 @@ class Fitzdoc():
             self.log.warning('Document "%s" is encryptet, processing stopped', self.file)
             return
         self.toc = []
+        self.tocstr = ''
         self.repeating_text_to_remove = []
         self.html = ''
         self.text = ''
@@ -59,6 +60,37 @@ class Fitzdoc():
         self.log.debug('Entering method "get_toc"')
         self.toc = self.doc.get_toc()
         self.log.info('Read table of contents')
+
+    def process_toc(self, page_offset:int):
+        """
+        process_toc creates a string of the TOC for separate output
+
+        :param page_offset: Offset of the page number like for page number
+        removal in fitzpage
+        :type page_offset: int
+        :return: Formatted string with the TOC
+        :rtype: str
+        """
+        self.log.debug('Entering method "process_toc"')
+        if not self.toc:
+            self.get_toc()
+        self.tocstr = ''
+        for item in self.toc:
+            # print(item)
+            # Indent by 5 spaces for each heading level
+            # Document title has item[0] == 1
+            # ! Page offset is off by 1 for most tested PDFs, not sure why
+            # ! It is correct for removing the page numbers from pages
+            # ! Offset errors for:
+            # !   Der Minoische Fall -2 off
+            # !   Die Streitenden Königreiche +1 off
+            # !   STA Beta Quadrant +2 off
+            if item[1]:
+                # Get rid of potential line breaks in the heading
+                heading = item[1].split('\r')[0].split('\n')[0]
+                # self.tocstr += f'{(item[0]-1)*5*" "}{(item[2]+page_offset-1):04d} {heading}\n'
+                self.tocstr += f'{(item[0]-1)*5*" "}{(item[2]-1):04d} {heading}\n'
+        return self.tocstr
 
     def print_file_info(self):
         """
@@ -118,10 +150,10 @@ class Fitzdoc():
             content = self.extract_text_from_page(p)
             self.page_text.append(content)
             if content:
-                self.html += f'\n\n<h1>====== Page {pn+page_offset:04d} ======</h1>\n\n'
+                self.html += f'\n\n<h1>====== Page {pn-page_offset:04d} ======</h1>\n\n'
                 self.html += content
             if p.text:
-                self.text += f'\n\n====== Page {pn+page_offset:04d} ======\n\n'
+                self.text += f'\n\n====== Page {pn-page_offset:04d} ======\n\n'
                 self.text += p.text
         return self.html
 
@@ -142,7 +174,8 @@ class Fitzdoc():
         if self.repeating_text_to_remove:
             for text in self.repeating_text_to_remove:
                 page.remove_xhtml_repeating(text)
-        page.remove_xhtml_page_number()
+        if self.config.fitz.text.remove_page_numbers:
+            page.remove_xhtml_page_number()
         return page.xhtml
 
     def detect_page_offset(self):
