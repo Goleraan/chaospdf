@@ -1,6 +1,7 @@
 """
  GNU GPL V3
  (c) 2023 Akram Radwan
+ Contains code for image recovery with PyMuPDF by (c) 2018 Jorj X. McKie
  
  pathlib to find and access PDF files
  logging for logging

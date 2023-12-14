@@ -2,7 +2,9 @@
 """
  GNU GPL V3
  (c) 2023 Akram Radwan
+ Contains code for image recovery with PyMuPDF by (c) 2018 Jorj X. McKie
  
+ argparse for parsing the command line arguments
  pathlib for accessing files
  logging for handling the log file
  logger for log file configuration
@@ -12,6 +14,7 @@
  config for a general program configuration
  tui for the text menu
 """
+import argparse
 from pathlib import Path
 import logging
 import logging.config
@@ -70,4 +73,7 @@ def main(**args):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Processes PDF files to extract text and images'
+        )
     main()

@@ -61,7 +61,8 @@ class Config():
                        'input': {'input_dir': str(Path('.').absolute()),
                                  'input_files': []},
                        'config': {'config_dir': str(Path('.').absolute()),
-                                  'config_file': 'chaospdf.json'}
+                                  'config_file': 'chaospdf.json',
+                                  'interactive': True}
                        }
 
     def __to_dict(self, settings_obj:Settings):
