@@ -595,6 +595,8 @@ class TUI:
         print('ChaosPDF - Text and image extraction from PDF files')
         print('Copyright (c) 2023  Akram Radwan')
         print()
+        print('Image extraction based on code copyright (c) 2018 Jorj X. McKie')
+        print()
         print('This program is free software: you can redistribute ' +
               'it and/or modify it under the terms of the GNU General ' +
               'Public License version 3 as published by the Free ' +
