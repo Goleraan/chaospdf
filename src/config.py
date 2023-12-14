@@ -29,10 +29,10 @@ class Config():
 
     def __init__(self):
         if not self.config:
+            if Path('chaospdf.json').exists():
+                self.read_config()
             self.default_config()
             self.cfg = json.loads(json.dumps(self.config), object_hook=Settings)
-        self.config_file = Path(self.config['config']['config_dir'],
-                                self.config['config']['config_file'])
 
     def default_config(self):
         """
@@ -64,19 +64,57 @@ class Config():
                                   'config_file': 'chaospdf.json'}
                        }
 
+    def __to_dict(self, settings_obj:Settings):
+        """
+        toDict turns a settings object back to a dictionary that it
+        can be dumped into a json file
+
+        :param settings_obj: Settings object
+        :type settings_obj: Settings
+        :raises TypeError: when the object cannot be converted to a
+        dictionary
+        :return: dictionary with all settings in the same hierarchy
+        that is defined in the default settings dict
+        :rtype: dict
+        """
+        settings_dict = vars(settings_obj)
+        output_dict = {}
+        if not isinstance(settings_dict, dict):
+            raise TypeError(f'Dict expected but got {type(settings_dict)}')
+        for key in settings_dict.keys():
+            print(key, settings_dict[key])
+            if isinstance(settings_dict[key], Settings):
+                output_dict = output_dict | {key: self.__to_dict(settings_dict[key])}
+            else:
+                output_dict = output_dict | {key: settings_dict[key]}
+        return output_dict
+
+    def config_to_dict(self):
+        """
+        config_to_dict returns the configuration object into the configuration
+        dictionary property
+        """
+        self.config = self.__to_dict(self.cfg)
+
     def read_config(self):
         """
         read_config reads the configuration file.
         """
-        with open(self.config_file, 'r', encoding='utf-8') as fp:
+        cfg_file = Path(self.cfg.config.config_dir,
+                        self.cfg.config.config_file)
+        with open(cfg_file, 'r', encoding='utf-8') as fp:
             self.config = json.load(fp)
-            self.cfg = json.loads(json.dumps(self.config), object_hook=Settings)
+            self.cfg = json.loads(json.dumps(self.config),
+                                  object_hook=Settings)
 
     def write_config(self):
         """
         write_config writes the configuration file.
         """
-        with open(self.config_file, 'w', encoding='utf-8') as fp:
+        cfg_file = Path(self.cfg.config.config_dir,
+                        self.cfg.config.config_file)
+        self.config_to_dict()
+        with open(cfg_file, 'w', encoding='utf-8') as fp:
             fp.write(json.dumps(self.config, sort_keys=True, indent=4))
 
     def print_config(self):

@@ -33,6 +33,7 @@ class TUI:
                            '(3) Output settings\n' +
                            '(4) Text extraction settings\n' +
                            '(5) Image extraction settings\n' +
+                           '(s) Settings files\n' +
                            '(0) Exit\n' +
                            '(c) Copyright and license information\n')
             match answer.lower():
@@ -58,6 +59,8 @@ class TUI:
                     if not self.tui_image():
                         return False
                     answer = ''
+                case 's':
+                    self.tui_settings_files()
                 case 'c':
                     self.print_license()
                 case _:
@@ -609,3 +612,76 @@ class TUI:
         print()
         print('You can obtain the source code of the program from ' +
               '<https://github.com/Goleraan/chaospdf>')
+
+    def tui_settings_files(self):
+        """
+        tui_settings_files shows the menu to interact with settings files.
+        """
+        answer = ''
+        while 1:
+            cfg_file = Path(self.cfg.cfg.config.config_dir,
+                            self.cfg.cfg.config.config_file)
+            if cfg_file.exists():
+                cfg_exists = 'which does not exist.'
+            else:
+                cfg_exists = 'which can be found.'
+            answer = input('\n' +
+                           f'Current settings file: {cfg_file} {cfg_exists}\n'
+                           '(1) Set settings file\n' +
+                           '(2) Read settings file\n' +
+                           '(3) Write settings file\n' +
+                           '(0) Return to main menu\n')
+            match answer.lower():
+                case '0':
+                    return
+                case 'q':
+                    return
+                case '1':
+                    self.tui_set_settings_file()
+                case '2':
+                    if cfg_file.exists():
+                        print(f'Reading {str(cfg_file)}')
+                        self.cfg.read_config()
+                    else:
+                        print(f'Cannot find {str(cfg_file)}')
+                case '3':
+                    cfg_file = Path(self.cfg.cfg.config.config_dir,
+                                    self.cfg.cfg.config.config_file)
+                    if cfg_file.exists():
+                        overwrite = input(f'{str(cfg_file)} exists already!\n' +
+                                           'Overwrite? (y/n)\n')
+                        if overwrite.lower() == 'y':
+                            self.cfg.write_config()
+                            print(f'Wrote settings to {str(cfg_file)}\n')
+                    elif Path(self.cfg.cfg.config.config_dir).exists():
+                        self.cfg.write_config()
+                        print(f'Wrote settings to {str(cfg_file)}\n')
+                    else:
+                        print(f'Cannot find path {self.cfg.cfg.config.config_dir}\n')
+                case _:
+                    answer = ''
+
+    def tui_set_settings_file(self):
+        """
+        tui_set_settings_file sets the location of the settings file
+        """
+        print('Please provide the absolute or relative path to the settings file.\n'+
+              'Examples:\n' +
+              'D:/chaos/chaospdf.json\n'
+              '..\\chaospdf.json\n')
+        answer = input('Please provide the absolute or relative path to the settings file.\n' +
+                        'Examples:\n' +
+                        'D:/chaos/chaospdf.json\n'
+                        '..\\chaospdf.json\n')
+        config_dir = Path(answer).parent
+        config_file = Path(answer).name
+        self.cfg.cfg.config.config_dir = str(config_dir)
+        self.cfg.cfg.config.config_file = config_file
+        if Path(answer).suffix != '.json':
+            print('Adding json file extension to name.')
+            config_file = Path(config_file + '.json')
+            self.cfg.cfg.config.config_file = config_file
+        if not config_dir.exists():
+            print(f'Warning, cannot find path {config_dir}\n')
+        if Path(answer).exists():
+            print(f'Found a configuration file {Path(answer)}\n')
