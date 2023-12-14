@@ -26,7 +26,7 @@ from config import Config
 from tui import TUI
 
 
-def main(**args):
+def main(args):
     print('ChaosPDF extraction tool version 0.1.2')
     print('Copyright (c) 2023  Akram Radwan')
     # Initialize logging
@@ -74,6 +74,24 @@ def main(**args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Processes PDF files to extract text and images'
+        description='Processes PDF files to extract text and images',
+        prefix_chars='-/'
         )
-    main()
+    parser.add_argument('-v', '--verbosity',
+                        default=3,
+                        type=int,
+                        choices=range(0,6),
+                        help='Verbosity: 0 only critical errors, 5 debugging.')
+    parser.add_argument('-t', '--textmenu',
+                        action='store_true',
+                        help='Opens a text menu for detailed settings.')
+    parser.add_argument('-c', '--config',
+                        default='chaospdf.json',
+                        help='Use specific configuration file.')
+    parser.add_argument('-p', '--pdffolder',
+                        action='extend',
+                        nargs='+',
+                        type=str,
+                        help='List of directories to search for PDF files.')
+    args = parser.parse_args()
+    main(args)
