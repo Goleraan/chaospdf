@@ -37,7 +37,7 @@ def main(args):
     mainlog.info('Start extraction session')
     files = PDFFiles(cfg)
     for folder in cfg.cfg.input.input_dirs:
-        if Path(folder).exists:
+        if Path(folder).exists():
             files.set_working_directory(Path(folder))
             files.search_files()
         else:
