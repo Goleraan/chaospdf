@@ -27,21 +27,24 @@ from tui import TUI
 
 
 def main(args):
-    print('ChaosPDF extraction tool version 0.1.2')
+    print('ChaosPDF extraction tool version 0.2.0')
     print('Copyright (c) 2023  Akram Radwan')
     # Initialize logging
-    log = Logger()  # Initialization is necessary, might not be needed to assign to variable, though
+    cfg = Config()
+    cfg.evaluate_args(args)
+    log = Logger(cfg)  # Initialization is necessary, might not be needed to assign to variable, though
     mainlog = logging.getLogger('main')
     mainlog.info('Start extraction session')
-    cfg = Config()
     files = PDFFiles(cfg)
-    files.set_working_directory(Path('.'))
-    files.search_files()
-    # files.list_files()
-    # print(cfg.cfg.fitz.export.output_dir)
-    # print(cfg.cfg.fitz.__dict__)
-    if not TUI(cfg).tui():
-        print('\nNo files processed\n')
+    for folder in cfg.cfg.input.input_dirs:
+        if Path(folder).exists:
+            files.set_working_directory(Path(folder))
+            files.search_files()
+        else:
+            mainlog.error('Cannot find directory %s', folder)
+    if cfg.cfg.config.interactive:
+        if not TUI(cfg).tui():
+            print('\nNo files processed\n')
         return
     print('If you see error messages, check the log file for more context')
     # config.print_config()
@@ -71,18 +74,21 @@ def main(args):
     mainlog.info('End extraction session')
     # Cleanup log
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Processes PDF files to extract text and images',
         prefix_chars='-/'
         )
     parser.add_argument('-v', '--verbosity',
-                        default=3,
+                        default=1,
                         type=int,
-                        choices=range(0,6),
-                        help='Verbosity: 0 only critical errors, 5 debugging.')
-    parser.add_argument('-t', '--textmenu',
+                        choices=range(0,5),
+                        help='Verbosity: 0 only critical errors\n' +
+                             '           1 all normal errors (default)\n' +
+                             '           2 all warnings\n' +
+                             '           3 all information\n' +
+                             '           4 debugging')
+    parser.add_argument('-m', '--menu',
                         action='store_true',
                         help='Opens a text menu for detailed settings.')
     parser.add_argument('-c', '--config',
@@ -92,6 +98,21 @@ if __name__ == '__main__':
                         action='extend',
                         nargs='+',
                         type=str,
-                        help='List of directories to search for PDF files.')
+                        default=['.'],
+                        help='List of directories to search for PDF files.\n' +
+                        'The list always contains the current working directory!')
+    parser.add_argument('-ni', '--noimages',
+                        action='store_false',
+                        help='Do not extract images.')
+    parser.add_argument('-nt', '--notext',
+                        action='store_false',
+                        help='Do not extract plain text.')
+    parser.add_argument('-nh', '--nohtml',
+                        action='store_false',
+                        help='Do not extract HTML text.')
+    parser.add_argument('-nc', '--notoc',
+                        action='store_false',
+                        help='Do not extract the table of contents.')
     args = parser.parse_args()
+    # args = parser.parse_args(['-p', '..'])  # Development only!
     main(args)

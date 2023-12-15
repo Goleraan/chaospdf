@@ -5,21 +5,25 @@
  logging for configuration of loggers
  json for reading and writing configuration files
  pathlib for accessing files
+ config for setting the logging level
 """
 import logging  # Standard logging module
 import logging.config
 import json
 from pathlib import Path
+from config import Config
 
 class Logger():
     logpath = Path('.')  # Path to the logfile
     config = {}  # Dictionary for the logging configuration
     debugoutput = True  # Should be set to False after implementation is complete
 
-    def __init__(self):
+    def __init__(self, cfg:Config):
         self.restore_default_settings()
         self.local_settings_dir = Path('.')
         self.local_settings_file = Path(self.local_settings_dir, 'log.json')
+        self.cfg = cfg
+        self.set_logging_level()
 
     def restore_default_settings(self):
         """
@@ -53,6 +57,27 @@ class Logger():
                                            'propagate': False},
                                    'config': {'handlers': ['console', 'file'],
                                               'propagate': False}}}
+        logging.config.dictConfig(self.config)
+
+    def set_logging_level(self):
+        """
+        set_logging_level sets the console logging level based
+        on the program configuration setting.
+        The file logging level is not changed!
+        """
+        level = logging.ERROR
+        match self.cfg.cfg.config.logging_level:
+            case 0:
+                level = logging.CRITICAL
+            case 1:
+                level = logging.ERROR
+            case 2:
+                level = logging.WARNING
+            case 3:
+                level = logging.INFO
+            case 4:
+                level = logging.DEBUG
+        self.config['handlers']['console']['level'] = level
         logging.config.dictConfig(self.config)
 
     def print_config(self):

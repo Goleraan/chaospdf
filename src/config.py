@@ -5,9 +5,11 @@
  pathlib for file access
  json for formatting
  pdffiles for adding and removing PDF files
+ argparse for handling the argparse objects
 """
 from pathlib import Path
 import json
+# import argparse  # ? Is this needed for evaluate_args?
 
 class Settings:
     """
@@ -59,10 +61,12 @@ class Config():
                                          'page_separator': True}
                                 },
                        'input': {'input_dir': str(Path('.').absolute()),
-                                 'input_files': []},
+                                 'input_files': [],
+                                 'input_dirs': ['.']},
                        'config': {'config_dir': str(Path('.').absolute()),
                                   'config_file': 'chaospdf.json',
-                                  'interactive': True}
+                                  'interactive': True,
+                                  'logging_level': 3}
                        }
 
     def __to_dict(self, settings_obj:Settings):
@@ -125,8 +129,39 @@ class Config():
         """
         print(json.dumps(self.cfg.__dict__))
 
-    def evaluate_args(self):
+    def evaluate_args(self, args):
         """
         evaluate_args evaluate arguments from main function
         """
-        print("Method not implemented")
+        self.__evaluate_args_config(args)
+        self.cfg.config.logging_level = args.verbosity
+        self.cfg.config.interactive = args.menu
+        self.cfg.fitz.export.write_all_images = not args.noimages
+        self.cfg.fitz.export.write_text = not args.notext
+        self.cfg.fitz.export.write_html = not args.nohtml
+        self.cfg.fitz.export.write_toc = not args.notoc
+        self.cfg.input.input_dirs = args.pdffolder
+
+    def __evaluate_args_config(self, args):
+        """
+        __evaluate_args_config handles the configuration file command
+        line argument
+
+        :param args: command line arguments as object
+        :type args: argparse.Namespace
+        """
+        if args.config:
+            config_dir = Path(args.config).parent
+            config_file = Path(args.config).name
+            if Path(args.config).suffix != '.json':
+                print('Adding json file extension to name.')
+                config_file = Path(config_file + '.json')
+            if not config_dir.exists():
+                print(f'Warning, cannot find path {config_dir}\n')
+            if Path(config_dir, config_file).exists():
+                self.cfg.config.config_dir = config_dir
+                self.cfg.config.config_file = config_file
+                self.read_config()
+            else:
+                print(
+                    f'Cannot find config file at {Path(config_dir, config_file)}')
