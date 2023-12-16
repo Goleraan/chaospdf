@@ -48,9 +48,7 @@ class Config():
                                            'create_sub_dirs': True,
                                            'use_pdf_output_dir': True,
                                            'output_dir': str(Path('.').absolute())},
-                                'images': {'write_doc_images': True,
-                                           'write_page_images': False,
-                                           'image_size_min': 5000,
+                                'images': {'image_size_min': 5000,
                                            'image_dimension_x_min': 130,
                                            'image_dimension_y_min': 130,
                                            'compression_limit': 0.05},
@@ -136,10 +134,10 @@ class Config():
         self.__evaluate_args_config(args)
         self.cfg.config.logging_level = args.verbosity
         self.cfg.config.interactive = args.menu
-        self.cfg.fitz.export.write_all_images = not args.noimages
-        self.cfg.fitz.export.write_text = not args.notext
-        self.cfg.fitz.export.write_html = not args.nohtml
-        self.cfg.fitz.export.write_toc = not args.notoc
+        self.cfg.fitz.export.write_all_images = args.noimages
+        self.cfg.fitz.export.write_text = args.notext
+        self.cfg.fitz.export.write_html = args.nohtml
+        self.cfg.fitz.export.write_toc = args.notoc
         self.cfg.input.input_dirs = args.pdffolder
 
     def __evaluate_args_config(self, args):

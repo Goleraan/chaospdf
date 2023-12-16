@@ -27,7 +27,7 @@ from tui import TUI
 
 
 def main(args):
-    print('ChaosPDF extraction tool version 0.2.0')
+    print('ChaosPDF extraction tool version 0.2.1')
     print('Copyright (c) 2023  Akram Radwan')
     # Initialize logging
     cfg = Config()
@@ -69,7 +69,7 @@ def main(args):
         if cfg.cfg.fitz.export.write_toc:
             out.save_text(doc.process_toc(offset), 'toc.txt')
         # Write images
-        if cfg.cfg.fitz.images.write_doc_images:
+        if cfg.cfg.fitz.export.write_all_images:
             doc.extract_images()
     mainlog.info('End extraction session')
     # Cleanup log
