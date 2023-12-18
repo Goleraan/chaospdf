@@ -263,7 +263,6 @@ class Fitzdoc():
         """
         self.log.debug('Entering method "extract_images"')
         outfile = Outfile(self.file, self.cfg)
-        output_dir = outfile.location
         #
         xref_count = self.doc.xref_length()
         softmasks = set()
@@ -330,6 +329,17 @@ class Fitzdoc():
             else:
                 # There is no soft mask, no recovery needed
                 samplesize = width * height * max(1, imgdict['colorspace'])
+            # Special case: ColorSpace definition exists
+            # Conversion to RGB PNG image
+            if '/ColorSpace' in self.doc.xref_object(xref, compressed=True):
+                pix = fitz.Pixmap(self.doc, xref)
+                pix = fitz.Pixmap(fitz.csRGB, pix)
+                imgdict = {'ext': 'png',
+                           'colorspace': 3,
+                           'image': pix.tobytes('png')}
+                imgdata = imgdict['image']
+                samplesize = width * height * 3
+                imgsize = len(imgdata)
             #
             if imgsize / samplesize <= self.cfg.cfg.fitz.images.compression_limit:
                 # Skip image if it's compressed to less than 5% (compression_limit) of its full size
